@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block title_part %}Случайные совпадения - Статистика{% endblock %}
+
+{% block container %}
+    <h2>Случайные совпадения</h2>
+    
+    <table class="table table-striped table-bordered table-condensed">
+        <thead>
+            <th>Время</th>
+            <th>Трек</th>
+            <th>Пользователи</th>
+        </thead>
+        <tbody>
+            {% for (coincidence, datetime, usernames, color) in coincidences %}
+                <tr>
+                    <td style="white-space: nowrap;">{{ datetime.strftime("%d.%m.%Y %H:%M") }}</td>
+                    <td>{{ coincidence.artist }} – {{ coincidence.track }}</td>
+                    <td style="color: {{ color }}">{{ usernames|safe }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <h2>Голубки</h2>
+    <table class="table table-striped table-bordered table-condensed">
+        <thead>
+            <th>Пользователи</th>
+            <th>Совпадений</th>
+        </thead>
+        <tbody>
+            {% for (usernames, coincidences_count) in doves %}
+                <tr>
+                    <td>{{ usernames|safe }}</td>
+                    <td>{{ coincidences_count }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

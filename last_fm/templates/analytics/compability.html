@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block title_part %}Совместимость пользователей - Статистика{% endblock %}
+
+{% block container %}
+    <h2>Совместимость пользователей</h2>
+    
+    {% for (length, groups) in length2groups %}
+        {% if groups %}
+        <h3>Группы по {{ length }}</h3>
+        <table class="table table-striped table-bordered table-condensed">
+            <thead>
+                <th style="width: 25%;">Пользователи</th>
+                <th>Значение критерия</th>
+            </thead>
+            <tbody>
+                {% for (users, set) in groups %}
+                    <tr>
+                        <td>{{ users }}</td>
+                        <td>
+                            <a href="#" class="toggle-next">{{ set|length }}</a>
+                            <div style="display: none;">{{ ", ".join(set|sort) }}</div>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% endif %}
+    {% endfor %}
+{% endblock %}
+
+{% block scripts %}
+    {{ super() }}
+
+    <script>
+    $(function(){
+        $(".toggle-next").on("click", function(){
+            $(this).next().toggle();
+            return false;
+        });
+    });
+    </script>
+{% endblock %}

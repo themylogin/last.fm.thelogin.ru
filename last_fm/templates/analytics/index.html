@@ -1,0 +1,172 @@
+{% extends "base.html" %}
+
+{% block title_part %}Статистика{% endblock %}
+
+{% macro form(action, title, subtitle, submit) %}
+    <form action="{{ url_for('analytics_%s' % action) }}" class="{{ action }} stats form" method="get" target="_blank">
+        <h3>{{ title }} <small>{{ subtitle }}</small></h3>
+
+        {{ caller() }}
+
+        <button type="submit" class="btn btn-primary">{{ submit }}</button>
+
+        <hr />
+    </form>
+{% endmacro %}
+
+{% macro text_input(name, title, value="") %}
+    <div class="form-group">
+        <label for="{{ name }}">{{ title }}</label>
+        <input type="text" name="{{ name }}" class="form-control" id="{{ name }}" value="{{ value }}" />
+    </div>
+{% endmacro %}
+
+{% macro integer_input(name, title, value, min=None, max=None) %}
+    {{ text_input(name, title, value) }}
+{% endmacro %}
+
+{% macro select(name, title, values) %}
+    <div class="form-group">
+        {% if title %}
+            <label for="{{ name }}">{{ title }}</label>
+        {% endif %}
+        <select name="{{ name }}" class="form-control">
+            {% for k, v in values %}
+                <option value="{{ k }}">{{ v }}</option>
+            {% endfor %}
+        </select>
+    </div>
+{% endmacro %}
+
+{% macro select_user(name="user", title=None, check_current=True) %}
+    <div class="form-group">
+        {% if title %}
+            <label for="{{ name }}">{{ title }}</label>
+        {% endif %}
+        <select name="{{ name }}" class="form-control">
+            {% for user in users %}
+                <option value="{{ user.id }}" {% if current_user == user and check_current %} selected="selected"{% endif %}>{{ user.username }}</option>
+            {% endfor %}
+        </select>
+    </div>
+{% endmacro %}
+
+{% macro select_users(name="users", title=None, select_current=False, show_select_all=False) %}
+    {% if title %}
+        <label style="display: block; margin-bottom: -10px;">{{ title }}</label>
+    {% endif %}
+    {% if show_select_all %}
+        <div class="checkbox">
+            <label><input type="checkbox" class="select-all" /></label>
+        </div>
+    {% endif %}
+    {% for user in users %}
+        {{ checkbox(name, user.username, user == current_user and select_current, value=user.id) }}
+    {% endfor %}
+{% endmacro %}
+
+{% macro checkbox(name, title, checked=False, value="1") %}    
+    <div class="checkbox">
+        <label><input type="checkbox" name="{{ name }}" value="{{ value }}" {% if checked %}checked="checked"{% endif %} /> {{ title }}</label>
+    </div>
+{% endmacro %}
+
+{% block container %}
+    {% call form("fight", "Бой пользователей", "кто начал слушать эту музыку первым?", "Устроить бой") %}
+        {{ select_users() }}
+
+        {{ integer_input("more_than_x_scrobbles", "Минимальное количество прослушиваний", 10, min=1) }}
+
+        {{ select("sort", "Сортировать по", [("date", "Дате появления в общих"), ("title", "Названию"), ("s_mordvinov", "Сергею Мордвинову")]) }}
+    {% endcall %}
+    
+    {% call form("repeat", "Ставь на рипит ёба", "кто непрерывно слушает по кругу одну и ту же песню?", "Узнать чем живёт") %}
+        {{ select_user() }}
+
+        {{ integer_input("more_than_x_scrobbles", "Минимальное количество прослушиваний", 10, min=1) }}
+
+        {{ checkbox("seq", "Поиск последовательностей") }}
+    {% endcall %}
+
+    {% call form("jump_to_date", "Перепрыгнуть к дате", "смотреть скробблы пользователя на last.fm", "Вспомнить былые времена") %}
+        {{ select_user() }}
+
+        {{ text_input("date", "Дата") }}
+    {% endcall %}
+
+    {% call form("recommendations", "Рекомендации", "какую музыку слушают друзья?", "Получить совет") %}
+        {{ select_user("user", "Рекомендации пользователю") }}
+        
+        {{ select_users("users", "От пользователей", show_select_all=True) }}
+
+        {{ select("target", "Ориентироваться на", [("friends", "Количество друзей"), ("scrobbles", "Количество прослушиваний")]) }}
+    {% endcall %}
+    
+    {% call form("compability", "Музыкальная совместимость ", "лучшие пары, тройки и четвёрки пользователей", "Рассчитать") %}
+        {{ select_users("users", "Проводить расчёт среди", show_select_all=True) }}
+
+        {{ integer_input("more_than_x_scrobbles", "Минимальное количество прослушиваний", 10, min=1) }}
+
+        {{ select("criterion", "Критерий", [("artist", "Общие исполнители"), ("track", "Общие треки")]) }}
+    {% endcall %}
+    
+    {% call form("the_only_ones", "Я не такой, как все", "каких исполнителей слушают только выбранные пользователи?", "Польстить себе") %}
+        <div class="row">
+            <div class="col-md-2" style="padding-top: 35px;">
+                {{ select_users("us", "") }}
+            </div>
+            <div class="col-md-2">
+                {{ select_users("them", "«Все» — это:", show_select_all=True) }}
+            </div>
+        </div>
+
+        {{ integer_input("more_than_x_scrobbles_us", "Минимальное количество прослушиваний у «меня»", 10, min=1) }}
+
+        {{ integer_input("more_than_x_scrobbles_them", "Минимальное количество прослушиваний у «них»", 10, min=1) }}
+    {% endcall %}
+    
+    {% call form("closer", "Closer", "насколько схожи ваши с другом музыкальные предпочтения по времени?", "Узнать историю дружбы") %}
+        <div class="row">
+            <div class="col-md-2">
+                {{ select_user("user1") }}
+            </div>
+            <div class="col-md-2">
+                {{ select_user("user2", check_current=False) }}
+            </div>
+        </div>
+
+        {{ select("criterion", "Критерий", [("artist", "Общие исполнители"), ("track", "Общие треки")]) }}
+
+        {{ select("criterion_type", "Тип критерия", [("local", "Локальный"), ("integral", "Интегральный")]) }}
+    {% endcall %}
+    
+    {% call form("startlisten", "Когда я начал слушать эту музыку?", "Именно слушать, а не просто первый скроббл", "Вспомнить как всё начиналось") %}
+        {{ select_user() }}
+
+        {{ integer_input("n", "Брать топ", 100) }}
+        {{ integer_input("days", "за периоды длиной (дней)", 180) }}
+    {% endcall %}
+    
+    {% call form("hitparade", "Хит-парад новинок", "Для составления ежегодных объективных обзоров музыкальных новинок", "Написать в блог") %}
+        {{ select_user("user", "Пользователь") }}
+
+        {{ integer_input("n", "Взять топ исполнителей", 200) }}
+
+        {{ integer_input("year", "За год", 2013) }}
+
+        {{ select("sort", "Сортировать по", [("scrobbles",         "Количеству прослушиваний"),
+                                             ("scrobbles_a_day",   "Количеству прослушиваний в день"),
+                                             ("length",            "Времени прослушивания"),
+                                             ("length_a_day",      "Времени прослушивания в день")]) }}
+    {% endcall %}
+    
+    {% call form("track_length_artist_top", "Не числом, а умением", "каких исполнителей пользователь слушает больше всего по времени (не по количеству треков)?", "Godspeed You! Black Emperor") %}
+        {{ select_user() }}
+    {% endcall %}
+    
+    {% call form("time_spent_to_music", "Время под музыку", "сколько времени наши пользователи провели под музыку?", "Узнать") %}
+    {% endcall %}
+    
+    {% call form("coincidences", "Удивительные совпадения", "иногда так случается, что разные пользователи одновременно слушают одну и ту же музыку", "Подивиться") %}
+    {% endcall %}
+{% endblock %}

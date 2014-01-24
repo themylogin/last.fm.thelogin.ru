@@ -1,0 +1,25 @@
+{% extends "base.html" %} 
+
+{% block title_part %}Новинки{% endblock %}
+
+{% block container %}
+    {% if releases.count() > 0 %}
+        {% for user_release in releases %}
+            <div class="release" data-artist="{{ user_release.artist }}">
+                <div class="artist">
+                    <a class="name" href="http://www.lastfm.ru/user/{{ current_user.username }}/library/music/{{ user_release.artist }}">{{ user_release.artist }}</a>
+                    <div class="icon"><span class="glyphicon glyphicon-headphones"></span> {{ user_release.artist_scrobbles }}</div>
+                    <div class="icon"><a class="ignore-artist" href="#"><span class="glyphicon glyphicon-remove"></span></a></div>
+                </div>
+            
+                <h3><a href="{{ user_release.release.url }}">{{ user_release.release.title }}</a></h3>
+                {{ get_release_html(user_release.release)|safe }}
+                <div class="clearfix"></div>
+            </div>
+        {% endfor %}
+    {% else %}
+        <div class="well">
+            <p>В настоящий момент для вас нет новых релизов. Скорее всего, вы зарегистрировались в системе недавно, и мы пока не успели скачать все ваши скробблы и выбрать актуальные новинки. Расчёты происходят ежедневно около полуночи по UTC. А пока можно поразвлекаться со <a href="#">статистикой</a>!</p>
+        </div>
+    {% endif %}
+{% endblock %}

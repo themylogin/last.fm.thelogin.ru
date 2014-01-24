@@ -1,0 +1,31 @@
+from setuptools import find_packages, setup
+
+setup(
+    name="last.fm",
+    version="0.2.0",
+    author="themylogin",
+    author_email="themylogin@gmail.com",
+    packages=find_packages(exclude=[]),
+    scripts=[],
+    test_suite="nose.collector",
+    url="http://last.fm.thelogin.ru",
+    description="",
+    long_description="",
+    install_requires=[
+        "celery",
+        "feedparser",
+        "Flask",
+        "Flask-Bootstrap",
+        "Flask-Login",
+        "Flask-Script",
+        "Flask-SQLAlchemy",
+        "Flask-WTF",
+        "gevent",
+        "gunicorn",
+        "lxml",
+        "python-twitter",
+        "pytils",
+        "sentry",
+    ],
+    setup_requires=[],
+)

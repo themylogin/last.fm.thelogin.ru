@@ -1,0 +1,21 @@
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, unicode_literals
+
+SECRET_KEY = ''
+
+SENTRY_DSN = ""
+
+CELERY_BROKER_URL = "redis://localhost:6379"
+
+SQLALCHEMY_DATABASE_URI = "mysql://root@localhost/last_fm"
+
+CACHE_TYPE = "redis"
+
+LAST_FM_API_KEY = ""
+LAST_FM_API_SECRET = ""
+
+TWITTER_CONSUMER_KEY = ""
+TWITTER_CONSUMER_SECRET = ""
+
+GUESTS_DEVICES_RESOLVER = "http://127.0.0.1:46401"
+GUESTS_DEVICES_PREFIXES = ["192.168.0."]

@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block title_part %}{{ title }} - Статистика{% endblock %}
+
+{% block container %}
+    <h2>{{ title }}</h2>
+    
+    {% if table_body %}
+        <table class="table table-striped table-bordered table-condensed">
+            <thead>
+                <th>Исполнитель</th>
+                {% for user in table_header %}
+                    <th>{{ user }}</th>
+                {% endfor %}
+            </thead>
+            <tbody>
+                {% for artist, scrobbles in table_body %}
+                    <tr>
+                        <td><a href="http://last.fm/music/{{ artist }}">{{ artist }}</a></td>
+                        {% for scrobble in scrobbles %}
+                            <td>{{ scrobble }}</td>
+                        {% endfor %}
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div class="well">К сожалению, у выбранных вами пользователей недостаточно элитный музыкальный вкус!</div>
+    {% endif %}
+{% endblock %}

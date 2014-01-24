@@ -1,0 +1,49 @@
+/* new releases */
+
+.release
+{
+    border: 1px solid #e7e7e7;
+
+    margin: 0 auto 20px;
+    padding: 10px;
+
+    position: relative;
+}
+    .release .artist
+    {
+        position: absolute;
+        top: 0;
+        right: 0;
+    }
+        .release .artist .name
+        {
+            display: block;
+
+            background: #e7e7e7;
+            color: #000;
+            padding: 5px 10px;
+        }
+        .release .artist .icon
+        {
+            text-align: right;
+            font-weight: 800;
+            font-size: 11px;
+            margin: 2px 4px;
+            
+        }
+            .release .artist .icon a
+            {
+                color: #000;
+            }
+
+    .release h3
+    {
+        margin: 5px 0 15px 0;
+    }
+
+    .release img
+    {
+        float: left;
+        margin-right: 10px;
+        max-width: 350px;9
+    }

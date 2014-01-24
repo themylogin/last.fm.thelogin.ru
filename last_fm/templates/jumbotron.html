@@ -1,0 +1,52 @@
+{% extends "bootstrap/base.html" %}
+
+{% block content %}
+    <div class="container">
+        <div class="header">
+            <ul class="nav nav-pills pull-right">
+                <li><a href="https://twitter.com/search?q=%23last_fm_666&amp;f=realtime">Twitter</a></li>
+                <li><a href="https://github.com/themylogin/last.fm.thelogin.ru">GitHub</a></li>
+            </ul>
+            <h3 class="text-muted">last.fm.thelogin.ru</h3>
+        </div>
+
+        <div class="jumbotron">
+            <h1>Привет</h1>
+            <p class="lead">Предлагаю пить ароматный чай, кушать вкусные блины с малиновым вареньем, смеяться и рассказывать друг другу всяческие байки.</p>
+            <p><a class="btn btn-lg btn-success" href="{{ url_for('login') }}">Согласен</a></p>
+        </div>
+
+        <div class="row marketing">
+            <div class="col-lg-6">
+                <h4>Новые релизы</h4>
+                <p>Будь в курсе всех музыкальных новинок, не пропускай ни одного нового альбома любимых исполнителей.</p>
+
+                <h4>Статистика</h4>
+                <p>Предавайся воспоминаниям и узнавай новое о себе и своих друзьях с помощью сложнейшего анализа миллионов скробблов.</p>
+
+                <h4>В умном доме гость</h4>
+                <p>Не переставай скробблить даже находясь в умном доме и лайкай треки прямо с телефона.</p>
+            </div>
+
+            <div class="col-lg-6">
+                <h4>Настоящие рекомендации</h4>
+                <p>Узнавай, какая музыка действительно похожа на ту, что слушаешь ты и что действительно рекомендуют друзья.</p>
+
+                <h4>Твиттер</h4>
+                <p>Держи всех своих пацанов в курсе того великолепия, что у тебя уже три дня подряд на репите.</p>
+
+                <h4>Open Source</h4>
+                <p>Есть идея? Fork, commit и push! Кто не программирует, тот идёт протирать пыль.</p>
+            </div>
+        </div>
+
+      <div class="footer">
+          <p>themylogin 2011-{{ now.year }}</p>
+      </div>
+    </div>
+{% endblock %}
+
+{% block styles %}
+    {{ super() }}
+    <link href="{{ url_for('static', filename='jumbotron-narrow.css') }}" rel="stylesheet">
+{% endblock %}

@@ -1,0 +1,45 @@
+{% extends "base.html" %} 
+
+{% block title_part %}Настройки{% endblock %}
+
+{% block container %}
+    <form action="{{ url_for('usercp') }}" class="form" method="post" role="form">
+        {{ form.hidden_tag() }}
+        {{ wtf.form_errors(form, hiddens='only') }}
+
+        {{ wtf.form_field(form.devices) }}
+        {{ wtf.form_field(form.auto_add_devices) }}
+
+        {% if current_user.twitter_data %}
+            <img src="{{ url_for('static', filename='twitter.png') }}" style="display: block; margin: 10px 0;" />
+        {% else %}
+            <a href="{{ url_for('twitter_init') }}"><img src="{{ url_for('static', filename='twitter.png') }}" style="display: block; margin: 10px 0;" /></a>
+
+            <div style="margin: 10px 0;"><a href="{{ url_for('twitter_init') }}">Привяжите свой twitter-аккаунт</a>, чтобы радовать своих фолловеров полезной информацией о том, какую музыку вы слушаете.</div>
+        {% endif %}
+
+        <div{% if not current_user.twitter_data %} style="display: none;"{% endif %}>
+            {{ wtf.form_field(form.use_twitter_data) }}
+
+            <hr />
+
+            {{ wtf.form_field(form.twitter_track_repeats) }}
+            {{ wtf.form_field(form.twitter_repeats_min_count) }}
+            {{ wtf.form_field(form.twitter_post_repeat_start) }}
+
+            <hr />
+
+            {{ wtf.form_field(form.twitter_track_artist_milestones) }}
+
+            <hr />
+
+            {{ wtf.form_field(form.twitter_win_artist_races) }}
+            {{ wtf.form_field(form.twitter_artist_races_min_count) }}
+            {{ wtf.form_field(form.twitter_lose_artist_races) }}
+
+            <hr />
+        </div>
+
+        {{ wtf.form_field(form.submit, button_map={"submit": "primary"}) }}
+    </form>
+{% endblock %}

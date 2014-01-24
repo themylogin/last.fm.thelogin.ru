@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+
+{% block title_part %}{{ title }}{% endblock %}
+
+{% block container %}    
+    <h2>{{ title }}</h2>
+    
+    {% if step == 1 %}
+        <p>Нам потребуется ваша помощь. У каких исполнителей в этом году выходили альбомы?</p>
+
+        <form action="{{ request.url }}" method="post" class="form hit-parade" data-year="{{ year }}">
+            <table class="table table-striped">
+                {% for artist, scrobbles, new_tracks in artists %}
+                    <tr>
+                        <td>{{ scrobbles }}</td>
+                        <td>
+                            <div class="checkbox {% if new_tracks %}text-success{% endif %}" style="margin: 0;">
+                                <label><input type="checkbox" name="artist" value="{{ artist }}" /> {{ artist }}</label>
+                            </div>
+                            <table class="table-bordered table-condensed">
+                                {% for track, albums in new_tracks %}
+                                    <tr>
+                                        <td>{{ track }}</td>
+                                        <td>{{ albums|join(", ") }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </table>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </table>
+
+            <input type="submit" class="btn btn-primary" value="Далее" />
+
+            <input type="hidden" name="step" value="2" />
+        </form>
+    {% endif %}
+
+    {% if step == 2 %}
+        <p>Хорошо, а теперь какие из треков этих исполнителей, прослушанных вами в этом году, были на этих альбомах?
+
+        <form action="{{ request.url }}" method="post" class="form hit-parade" data-year="{{ year }}">
+            {% for artist, track_albums_isnew in artist_tracks %}
+                <h4>{{ artist }}</h4>
+
+                <table class="table table-striped">
+                    {% for track, albums, isnew in track_albums_isnew %}
+                        <tr>
+                            <td>
+                                <div class="checkbox {% if isnew %}text-success{% endif %}" style="margin: 0;">
+                                    <label><input type="checkbox" name="track" value="{{ artist }} - {{ track }}" />{{ track }}</label>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="radio" style="margin: 0;">
+                                    {% for album in albums %}
+                                        <label>
+                                            <input type="radio" name="{{ artist }} - {{ track }}" value="{{ album }}" style="float: none; margin-left: 40px;" /> {{ album }}
+                                        </label>
+                                    {% endfor %}
+
+                                    <label>
+                                        <input type="radio" name="{{ artist }} - {{ track }}" value="Другой альбом" style="float: none; margin-left: 40px;" /> Другой альбом
+                                    </label>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </table>
+
+                <input type="hidden" name="artist" value="{{ artist }}" />
+            {% endfor %}
+
+            <input type="submit" class="btn btn-primary" value="Далее" />
+
+            <input type="hidden" name="step" value="3" />
+        </form>
+    {% endif %}
+
+    {% if step == 3 %}
+        <p>Проверьте, что всё верно, и мы сможем сгенерировать хит-парад.</p>
+
+        <form action="{{ request.url }}" method="post" class="form hit-parade" data-year="{{ year }}">
+            {% for artist, track_length in artist_tracks %}
+                <h4>{{ artist }}</h4>
+                <table class="table">                
+                    {% for track, album, length in track_length %}
+                        <tr>
+                            <td style="width: 165px; line-height: 28px;">
+                                <input type="hidden" name="track" value="{{ artist }} - {{ track }}" />
+                                <input type="hidden" name="album" value="{{ album }}" />
+                                <input type="text" class="form-control" name="length_m" value="{% if length %}{{ (length.length / 60)|round(0, 'floor')|int }}{% endif %}" style="display: inline; width: 42px; text-align: right; margin-bottom: 0;" />
+                                :
+                                <input type="text" class="form-control" name="length_s" value="{% if length %}{% if length.length % 60 < 10 %}0{{ length.length % 60 }}{% else %}{{ length.length % 60 }}{% endif %}{% endif %}" style="display: inline; width: 42px; text-align: right; margin-bottom: 0;" />
+                            </td>
+                            <td style="line-height: 32px;">{{ track }}</td>
+                        </div>
+                    {% endfor %}
+                </table>
+                <input type="hidden" name="artist" value="{{ artist }}" />
+            {% endfor %}
+
+            <input type="submit" class="btn btn-primary" value="Готово" />
+
+            <input type="hidden" name="step" value="4" />
+        </form>
+    {% endif %}
+
+    {% if step == 4 %}
+        Сортировать по:
+        <ul class="nav nav-pills hit-parade-sorter">
+            {% for (k, v) in [('scrobbles', 'Количеству прослушиваний'), ('scrobbles_a_day', 'Количеству прослушиваний в день'), ('length', 'Времени прослушивания'), ('length_a_day', 'Времени прослушивания в день')] %}
+                <li{% if sort == k %} class="active"{% endif %}><a href="{{ k|replace('_', '-') }}">{{ v }}</a></li>
+            {% endfor %}
+        </ul>
+
+        <div class="parade">
+        {% for (artist, album, tracks, total_scrobbles, total_length, scrobblesADay, lengthADay) in parade %}
+            <div data-scrobbles="{{ total_scrobbles }}" data-length="{{ total_length }}" data-scrobbles-a-day="{{ scrobblesADay }}" data-length-a-day="{{ lengthADay }}">
+                <h4><span>{{ loop.index }}</span>. {{ artist }} - {{ album }}: {{ total_scrobbles }} скробблов ({{ "%.2f"|format(scrobblesADay) }} в день), {{ (total_length / 3600)|round(0, 'floor')|int }}:{% if (total_length / 60)|int % 60 < 10 %}0{{ (total_length / 60)|int % 60 }}{% else %}{{ (total_length / 60)|int % 60 }}{% endif %} ({{ (lengthADay / 60)|round(0, 'floor')|int }}:{% if lengthADay|int % 60 < 10 %}0{{ lengthADay|int % 60 }}{% else %}{{ lengthADay|int % 60 }}{% endif %} в день)</h4>
+                <div class="well">
+                    <table class="table">
+                        {% for (track, scrobbles, length, total_length, first_scrobble, last_scrobble) in tracks %}
+                            <tr>
+                                <td>{{ track }}</td>
+                                <td>{{ scrobbles }}</td>
+                                <td>x</td>
+                                <td>{{ (length / 60)|round(0, 'floor')|int }}:{% if length % 60 < 10 %}0{% endif %}{{ length % 60 }}</td>
+                                <td>=</td>
+                                <td>{{ (total_length / 60)|round(0, 'floor')|int }}:{% if total_length % 60 < 10 %}0{% endif %}{{ total_length % 60 }}</td>
+                            </tr>
+                        {% endfor %}
+                    </table>
+                </div>
+            </div>
+        {% endfor %}
+        </div>
+    {% endif %}
+{% endblock %}

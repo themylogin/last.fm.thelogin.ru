@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block title_part %}{{ title }} - Статистика{% endblock %}
+
+{% block container %}
+    <h2>{{ title }}</h2>
+    
+    {% if table_body %}
+        <table class="table table-striped table-bordered table-condensed">
+            <thead>
+                {% for col in table_header %}
+                    <th>{{ col }}</th>
+                {% endfor %}
+            </thead>
+            <tbody>
+                {% for row in table_body %}
+                    <tr>
+                        {% for col in row %}
+                            <td>{{ col|safe }}</td>
+                        {% endfor %}
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div class="well">К сожалению, выбранные пользователи ничего не могут вам посоветовать.</div>
+    {% endif %}
+{% endblock %}
