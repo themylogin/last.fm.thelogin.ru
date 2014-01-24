@@ -129,7 +129,7 @@ class ManageGuests(restful.Resource):
         current_visit.left_data = dict(request.form.items())
         db.session.commit()
 
-        self._notify_changes()
+        self.notify_changes()
 
     def _get_user(self, user_id):
         user = db.session.query(User).get(user_id)
@@ -151,10 +151,10 @@ class ManageGuests(restful.Resource):
         db.session.add(visit)
         db.session.commit()
 
-        cls._notify_changes()
+        cls.notify_changes()
 
     @classmethod
-    def _notify_changes(cls):
+    def notify_changes(cls):
         redis = Redis()
         redis.incr(version_key)
         redis.publish(version_pubsub_key, "")

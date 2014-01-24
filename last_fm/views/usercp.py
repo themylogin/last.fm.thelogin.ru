@@ -12,6 +12,7 @@ import urllib
 from urlparse import parse_qsl
 from wtforms import fields, validators
 
+from last_fm.api import ManageGuests
 from last_fm.app import app
 from last_fm.db import db
 from last_fm.models import *
@@ -73,6 +74,7 @@ def usercp():
     if form.validate_on_submit():
         form.populate_obj(current_user)
         db.session.commit()
+        ManageGuests.notify_changes()
         return redirect(url_for("usercp"))
     else:
         return render_template("usercp.html", form=form)
@@ -112,5 +114,6 @@ def twitter_callback():
     current_user.twitter_username           = current_user.twitter_data["screen_name"]
 
     db.session.commit()
+    ManageGuests.notify_changes()
 
     return redirect(url_for("usercp"))
