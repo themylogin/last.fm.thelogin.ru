@@ -3,13 +3,17 @@ from __future__ import absolute_import, division, unicode_literals
 
 from collections import defaultdict
 import itertools
+import logging
 from sqlalchemy.sql import func
+import twitter
 import urllib2
 
 from last_fm.cron.utils import job
 from last_fm.db import db
 from last_fm.models import *
 from last_fm.utils.twitter import get_api_for_user, post_tweet
+
+logger = logging.getLogger(__name__)
 
 
 @job(minute="*/30")
@@ -78,7 +82,13 @@ def tweet_milestones():
     # races
     for winner in artist_races_users:
         if winner.twitter_win_artist_races:
-            for loser_twitter in get_api_for_user(winner).GetFriendIDs(screen_name=winner.twitter_username):
+            try:
+                friends = get_api_for_user(winner).GetFriendIDs(screen_name=winner.twitter_username)
+            except twitter.TwitterError:
+                logger.exception("GetFriendIDs for %s", winner.twitter_username)
+                continue
+
+            for loser_twitter in friends:
                 if loser_twitter in twitter2user:
                     loser = twitter2user[loser_twitter]
                     for artist in user2artist2scrobbles[winner]["now"]:

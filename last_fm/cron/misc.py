@@ -16,7 +16,7 @@ from last_fm.utils.twitter import get_api_for_user
 logger = logging.getLogger(__name__)
 
 
-@job(hour=5, minute=0)
+@job(hour="*/1", minute=0)
 def revoke_twitter_tokens():
     for user in db.session.query(User).\
                            filter(User.twitter_username != None):
