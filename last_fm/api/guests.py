@@ -59,15 +59,14 @@ class Users(restful.Resource):
     def get(self):
         users = []
         for user in db.session.query(User).\
-                               filter(User.session_key != None).\
-                               order_by(User.username):
+                               filter(User.session_key != None):
             current_visit = ManageGuests.get_current_visit(user)
             users.append({
                 "user": prepare_user(user),
                 "came": prepare_visit(current_visit)["came"] if current_visit else False,
             })
 
-        return users
+        return sorted(users, key=lambda user: user["user"]["title"].lower())
 
 
 class UserByDevice(restful.Resource):

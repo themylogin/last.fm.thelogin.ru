@@ -5,7 +5,7 @@ SECRET_KEY = ''
 
 SENTRY_DSN = ""
 
-CELERY_BROKER_URL = "redis://localhost:6379"
+CELERY_BROKER_URL = "amqp:///last_fm"
 
 SQLALCHEMY_DATABASE_URI = "mysql://root@localhost/last_fm"
 
