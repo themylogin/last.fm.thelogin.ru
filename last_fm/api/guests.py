@@ -3,7 +3,7 @@ from __future__ import absolute_import, unicode_literals
 
 from datetime import datetime
 from flask import *
-from flask.ext import restful
+from flask.ext.restful import abort, Resource
 from redis import Redis
 
 from last_fm.app import app
@@ -55,7 +55,7 @@ def prepare_visit(visit):
     return data
 
 
-class Users(restful.Resource):
+class Users(Resource):
     def get(self):
         users = []
         for user in db.session.query(User).\
@@ -69,7 +69,7 @@ class Users(restful.Resource):
         return sorted(users, key=lambda user: user["user"]["title"].lower())
 
 
-class UserByDevice(restful.Resource):
+class UserByDevice(Resource):
     def get(self, device):
         for user in db.session.query(User).all():
             if normalize_mac_address(device) in user.devices:
@@ -78,7 +78,7 @@ class UserByDevice(restful.Resource):
         abort(404)
 
 
-class Guests(restful.Resource):
+class Guests(Resource):
     def get(self):
         range_header = request.headers.get("Range", None)
         if range_header:
@@ -109,7 +109,7 @@ class Guests(restful.Resource):
         }
 
 
-class ManageGuests(restful.Resource):
+class ManageGuests(Resource):
     def post(self, user_id):
         user = self._get_user(user_id)
         current_visit = self.get_current_visit(user)
