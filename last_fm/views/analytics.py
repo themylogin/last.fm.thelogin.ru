@@ -317,7 +317,7 @@ def analytics_closer():
 @app.route("/analytics/startlisten")
 @cached_analytics_view
 def analytics_startlisten():
-    user = int(request.args.get("user"))
+    user = db.session.query(User).get(request.args.get("user", type=int))
     period_size = int(request.args.get("days")) * 86400
 
     first_scrobble_uts = db.session.query(func.min(Scrobble.uts)).filter_by(user=user).scalar()
@@ -338,12 +338,12 @@ def analytics_startlisten():
             day2scrobbles = dict([
                 (day, 0)
                 for day in range(
-                    db.session.query(func.min(Scrobble.uts)).filter_by(user=user, artist=artist).scalar() / 86400,
-                    db.session.query(func.max(Scrobble.uts)).filter_by(user=user, artist=artist).scalar() / 86400 + 1
+                    int(db.session.query(func.min(Scrobble.uts)).filter_by(user=user, artist=artist).scalar() / 86400),
+                    int(db.session.query(func.max(Scrobble.uts)).filter_by(user=user, artist=artist).scalar() / 86400) + 1
                 )
             ])
             for (uts, ) in db.session.query(Scrobble.uts).filter_by(user=user, artist=artist):
-                day2scrobbles[uts / 86400] += 1
+                day2scrobbles[int(uts / 86400)] += 1
 
             for day in day2scrobbles:
                 if day2scrobbles[day] < 4:
@@ -373,7 +373,7 @@ def analytics_startlisten():
                 scrobbles_before_gap = sum([scrobbles for day, scrobbles in day2scrobbles.items() if day < gap_start])
                 scrobbles_after_gap = sum([scrobbles for day, scrobbles in day2scrobbles.items() if day >= gap_start])
                 if scrobbles_before_gap < scrobbles_after_gap:
-                    if float(scrobbles_before_gap) / total_scrobbles < float(gap_length) / total_days:
+                    if scrobbles_before_gap / total_scrobbles < gap_length / total_days:
                         first_scrobble_appx = (gap_start + gap_length) * 86400
                     else:
                         first_scrobble_appx = sorted(day2scrobbles.keys())[0] * 86400
@@ -384,17 +384,17 @@ def analytics_startlisten():
 
             artists[first_scrobble.artist] = {
                 "track"     :   first_scrobble.track,
-                "datetime"  :   datetime.datetime.fromtimestamp(first_scrobble.uts),
+                "datetime"  :   datetime.fromtimestamp(first_scrobble.uts),
             }
             if first_scrobble.uts != totally_first_scrobble.uts:
                 artists[first_scrobble.artist]["totally_first_scrobble"] = {
                     "track"     :   totally_first_scrobble.track,
-                    "datetime"  :   datetime.datetime.fromtimestamp(totally_first_scrobble.uts),
+                    "datetime"  :   datetime.fromtimestamp(totally_first_scrobble.uts),
                 }
 
     return {
         "navbar_active" :   "analytics",
-        "title"         :   "Когда %(user)s начал слушать музыку?" % { "user" : db.session.query(User.username).filter_by(id=user).scalar() },
+        "title"         :   "Когда %(user)s начал слушать музыку?" % { "user" : user.username },
         "rows"          :   sorted(artists.items(), key=lambda t: t[1]["datetime"]),
     }
 
@@ -562,7 +562,7 @@ def analytics_track_length_artist_top():
     user = db.session.query(User).get(int(request.args.get("user")))
 
     return dict(user=user, top=[
-        (artist, timedelta_in_words(length, 2))
+        (artist, timedelta_in_words(int(length), 2))
         for artist, length in db.session.query(Scrobble.artist, func.sum(ApproximateTrackLength.length)).\
                                          outerjoin((ApproximateTrackLength, Scrobble.approximate_track_length)).\
                                          filter(Scrobble.user == user, ApproximateTrackLength.track != None).\
@@ -576,7 +576,7 @@ def analytics_track_length_artist_top():
 @cached_analytics_view
 def analytics_time_spent_to_music():
     return dict(users=[
-        (db.session.query(User).get(user_id), timedelta_in_words(time_spent, 2))
+        (db.session.query(User).get(user_id), timedelta_in_words(int(time_spent), 2))
         for user_id, time_spent in db.session.query(Scrobble.user_id, func.sum(ApproximateTrackLength.length)).\
                                               outerjoin((ApproximateTrackLength, Scrobble.approximate_track_length)).\
                                               group_by(Scrobble.user_id).\
