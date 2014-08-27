@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
-from __future__ import absolute_import, unicode_literals
+from __future__ import absolute_import, division, unicode_literals
 
-from flask.ext.script import Manager
 import os
 import subprocess
 from urlparse import urlparse
@@ -9,16 +8,16 @@ from urlparse import urlparse
 from themyutils.sqlalchemy.sql import literal_query
 
 from last_fm import app
+from last_fm.celery import cron as c
 from last_fm.db import db
-from last_fm.cron.utils import jobs
+from last_fm.manager import manager
 from last_fm.models import *
 
-manager = Manager(app)
 
 @manager.command
 def cron(job):
     app.debug = True
-    jobs["last_fm.cron.%s" % job]()
+    c.jobs["last_fm.cron.%s" % job]()
 
 
 @manager.command

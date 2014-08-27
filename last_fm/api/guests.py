@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import absolute_import, unicode_literals
+from __future__ import absolute_import, division, unicode_literals
 
 from datetime import datetime
 from flask import *
@@ -15,6 +15,8 @@ version_key = "last.fm:guests_api:guests_version"
 version_pubsub_key = "last.fm:guests_api:guests_version_pubsub"
 
 Redis().incr(version_key)
+
+__all__ = [b"Users", b"UserByDevice", b"Guests", b"ManageGuests"]
 
 
 def prepare_user(user):

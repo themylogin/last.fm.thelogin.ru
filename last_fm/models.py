@@ -1,11 +1,17 @@
 # -*- coding: utf-8 -*-
-from __future__ import absolute_import, unicode_literals
+from __future__ import absolute_import, division, unicode_literals
 
 from datetime import datetime
 from flask.ext.login import UserMixin
 import json
 
 from last_fm.db import db
+
+__all__ = [b"User", b"Scrobble", b"UserArtist",
+           b"ReleaseFeed", b"Release", b"UserRelease", b"UserArtistIgnore",
+           b"ApproximateTrackLength", b"Coincidence",
+           b"GuestVisit",
+           b"Repeat", b"MilestoneCalculationTimestamp"]
 
 
 class User(db.Model, UserMixin):

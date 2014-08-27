@@ -8,7 +8,8 @@ import mpd
 from sqlalchemy.sql import func, literal_column
 import twitter
 
-from last_fm.cron.utils import job
+
+from last_fm.celery import cron
 from last_fm.db import db
 from last_fm.models import *
 from last_fm.utils.twitter import get_api_for_user
@@ -16,7 +17,7 @@ from last_fm.utils.twitter import get_api_for_user
 logger = logging.getLogger(__name__)
 
 
-@job(hour="*/1", minute=0)
+@cron.job(hour="*/1", minute=0)
 def revoke_twitter_tokens():
     for user in db.session.query(User).\
                            filter(User.twitter_username != None):
@@ -40,7 +41,7 @@ def revoke_twitter_tokens():
     db.session.commit()
     
 
-@job(hour=5, minute=0)
+@cron.job(hour=5, minute=0)
 def calculate_approximate_track_lengths():
     client = mpd.MPDClient()
     client.connect("192.168.0.4", 6600)
@@ -193,7 +194,7 @@ def calculate_approximate_track_lengths():
     logger.info("Found %d new tracks, lengths for %d successfully inserted" % (new_tracks, new_tracks_success,))
 
 
-@job(day_of_month=1, hour=6, minute=0)
+@cron.job(day_of_month=1, hour=6, minute=0)
 def calculate_coincidences():
     db.session.execute("DELETE FROM `" + Coincidence.__tablename__ + "`")
 

@@ -9,7 +9,7 @@ import time
 from themyutils.datetime.timedelta import timedelta_in_words
 from twitter_overkill.utils import *
 
-from last_fm.cron.utils import job
+from last_fm.celery import cron
 from last_fm.db import db
 from last_fm.models import *
 from last_fm.utils.twitter import post_tweet
@@ -19,7 +19,7 @@ def get_gender_verb(user, male, female):
     return female if user.data.get("gender") == "f" else male
 
 
-@job(month_of_year=1, day_of_month=1, hour=0, minute=0)
+@cron.job(month_of_year=1, day_of_month=1, hour=0, minute=0)
 def tweet_year_stats():
     owner_id = 11
 

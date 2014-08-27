@@ -8,7 +8,7 @@ from sqlalchemy.sql import func
 import twitter
 import urllib2
 
-from last_fm.cron.utils import job
+from last_fm.celery import cron
 from last_fm.db import db
 from last_fm.models import *
 from last_fm.utils.twitter import get_api_for_user, post_tweet
@@ -16,7 +16,7 @@ from last_fm.utils.twitter import get_api_for_user, post_tweet
 logger = logging.getLogger(__name__)
 
 
-@job(minute="*/30")
+@cron.job(minute="*/30")
 def tweet_milestones():
     session = db.create_scoped_session()
 

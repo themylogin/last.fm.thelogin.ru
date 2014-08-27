@@ -13,7 +13,7 @@ import urllib2
 from themyutils.misc import retry
 
 from last_fm.app import app
-from last_fm.cron.utils import job
+from last_fm.celery import cron
 from last_fm.db import db
 from last_fm.models import *
 from last_fm.utils.model import get_user_artists
@@ -21,7 +21,7 @@ from last_fm.utils.model import get_user_artists
 logger = logging.getLogger(__name__)
 
 
-@job(minute="*/15")
+@cron.job(minute="*/15")
 def update_releases():
     for feed in db.session.query(ReleaseFeed):
         for post in feedparser.parse(feed.url)["items"]:
@@ -40,7 +40,7 @@ def update_releases():
     db.session.commit()
 
 
-@job(hour=5, minute=0)
+@cron.job(hour=5, minute=0)
 def update_user_artists():
     for u in db.session.query(User).\
                         filter(User.download_scrobbles == False,
@@ -84,7 +84,7 @@ def update_user_artists():
         session.commit()
 
 
-@job(hour="*/2", minute=0)
+@cron.job(hour="*/2", minute=0)
 def update_user_releases():
     not_w = re.compile("\W", flags=re.UNICODE)
     comparable_str = lambda s: re.sub(not_w, "", s.lower())

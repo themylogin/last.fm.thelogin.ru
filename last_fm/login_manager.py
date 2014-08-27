@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
-from __future__ import absolute_import, unicode_literals
+from __future__ import absolute_import, division, unicode_literals
 
 from flask.ext.login import LoginManager
 
 from last_fm.db import db
 from last_fm.models import User
+
+__all__ = [b"login_manager"]
 
 login_manager = LoginManager()
 

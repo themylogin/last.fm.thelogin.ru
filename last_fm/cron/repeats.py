@@ -1,5 +1,5 @@
-# -*- coding=utf-8 -*-
-from __future__ import absolute_import, unicode_literals
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, unicode_literals
 
 import itertools
 import logging
@@ -7,7 +7,7 @@ import pytils
 import urllib2
 import time
 
-from last_fm.cron.utils import job
+from last_fm.celery import cron
 from last_fm.db import db
 from last_fm.models import *
 from last_fm.utils.twitter import post_tweet
@@ -15,7 +15,7 @@ from last_fm.utils.twitter import post_tweet
 logger = logging.getLogger(__name__)
 
 
-@job(minute="*/30")
+@cron.job(minute="*/30")
 def check_new_repeats():
     for user in db.session.query(User).\
                            filter(User.download_scrobbles == True,
@@ -74,7 +74,7 @@ def check_new_repeats():
         session.commit()
 
 
-@job(minute="*/5")
+@cron.job(minute="*/5")
 def tweet_repeats():
     for repeat in db.session.query(Repeat).\
                              filter(Repeat.total == None):
