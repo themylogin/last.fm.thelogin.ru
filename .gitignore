@@ -38,5 +38,6 @@ nosetests.xml
 # PyCharm
 .idea
 
+alembic.ini
 last_fm/config.py
 last_fm/static/dump.sql.gz

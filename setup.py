@@ -12,6 +12,7 @@ setup(
     description="",
     long_description="",
     install_requires=[
+        "alembic",
         "celery",
         "feedparser",
         "Flask",
