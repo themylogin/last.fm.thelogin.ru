@@ -93,8 +93,18 @@ class UserArtist(db.Model):
 
 
 class ReleaseFeed(db.Model):
-    id  = db.Column(db.Integer, primary_key=True)
-    url = db.Column(db.String(255))
+    id      = db.Column(db.Integer, primary_key=True)
+    url     = db.Column(db.String(255))
+    private = db.Column(db.Boolean)
+
+    users   = db.relationship("User", secondary="private_release_feed_user",
+                              backref=db.backref("private_release_feeds"))
+
+
+private_release_feed_user = db.Table("private_release_feed_user",
+    db.Column("feed_id", db.Integer, db.ForeignKey("release_feed.id")),
+    db.Column("user_id", db.Integer, db.ForeignKey("user.id"))
+)
 
 
 class Release(db.Model):

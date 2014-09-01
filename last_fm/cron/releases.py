@@ -101,9 +101,11 @@ def update_user_releases():
 
         artists = filter(lambda t: len(t[0]) > 3, [(comparable_str(artist), artist, scrobbles)
                                                    for artist, scrobbles in get_user_artists(user, min_scrobbles=10)])
-
         for release in session.query(Release).\
-                               filter(Release.date > datetime.now() - timedelta(days=30)).\
+                               join(ReleaseFeed).\
+                               filter(Release.date > datetime.now() - timedelta(days=30),
+                                      ((ReleaseFeed.private == False) |
+                                       (ReleaseFeed.id.in_([f.id for f in u.private_release_feeds])))).\
                                order_by(Release.id.desc()):
             release_title = comparable_str(release.title)
 
