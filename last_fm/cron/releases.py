@@ -6,6 +6,7 @@ import feedparser
 import logging
 from lxml import objectify
 import re
+import socket
 from sqlalchemy.sql import func
 import urllib
 import urllib2
@@ -23,6 +24,7 @@ logger = logging.getLogger(__name__)
 
 @cron.job(minute="*/15")
 def update_releases():
+    socket.setdefaulttimeout(10)
     for feed in db.session.query(ReleaseFeed):
         for post in feedparser.parse(feed.url)["items"]:
             if db.session.query(func.count(Release.id)).filter_by(title=post["title"]).scalar() == 0:
