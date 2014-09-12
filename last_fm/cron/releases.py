@@ -26,7 +26,12 @@ logger = logging.getLogger(__name__)
 def update_releases():
     socket.setdefaulttimeout(10)
     for feed in db.session.query(ReleaseFeed):
-        for post in feedparser.parse(feed.url)["items"]:
+        try:
+            posts = feedparser.parse(feed.url)["items"]
+        except:
+            logging.exception("Error downloading RSS %s", feed.url)
+            continue
+        for post in posts:
             if db.session.query(func.count(Release.id)).filter_by(title=post["title"]).scalar() == 0:
                 release = Release()
                 release.feed = feed
