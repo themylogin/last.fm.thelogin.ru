@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+
+{% block title_part %}{{ title }} - Статистика{% endblock %}
+
+{% block container %}
+    <h2>{{ title }}</h2>
+
+    <table class="table table-striped table-bordered table-condensed">
+        <thead>
+            <th>Исполнитель</th>
+            <th>Прослушиваний</th>
+            <th>Ближайший конкурент</th>
+        </thead>
+
+        <tbody>
+            {% for user, artists in user2artists %}
+                <tr>
+                    <td colspan="3"><h3>{{ user }}</h3></td>
+                </tr>
+                {% for artist, scrobbles, second_user in artists %}
+                    <tr>
+                        <td><a href="http://last.fm/music/{{ artist }}">{{ artist }}</a></td>
+                        <td>{{ scrobbles }}</td>
+                        <td>
+                            {% if second_user %}
+                                {{ second_user[0] }} ({{ second_user[1] }})
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

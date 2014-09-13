@@ -15,6 +15,7 @@ from sqlalchemy.sql import distinct, func, literal_column, operators
 import time
 
 from themyutils.datetime.timedelta import timedelta_in_words
+from themyutils.itertools import unique_items
 
 from last_fm.app import app
 from last_fm.cache import cache
@@ -27,7 +28,7 @@ def cached_analytics_view(view):
         cache_key = request.url
 
         result = cache.get(cache_key)
-        if result is None:
+        if app.debug or result is None:
             result = view()
             cache.set(cache_key, result, timeout=3600)
 
@@ -35,6 +36,26 @@ def cached_analytics_view(view):
 
     decorated.__name__ = view.__name__
     return decorated
+
+
+def get_user2artist2scrobbles(user_ids, min_scrobbles=0):
+    return {user_id: dict(db.session.query(Scrobble.artist, func.count(Scrobble.id)).\
+                                     group_by(Scrobble.artist).\
+                                     filter_by(user_id=user_id).\
+                                     having(func.count(Scrobble.id) >= (min_scrobbles(user_id)
+                                                                        if callable(min_scrobbles)
+                                                                        else min_scrobbles)))
+            for user_id in user_ids}
+
+
+def get_user2artistlower2scrobbles(user2artist2scrobbles):
+    return {user: {artist.lower(): scrobbles
+                   for artist, scrobbles in user2artist2scrobbles[user].items()}
+            for user in user2artist2scrobbles.keys()}
+
+
+def get_user2username():
+    return dict(db.session.query(User.id, User.username).all())
 
 
 @app.route("/analytics")
@@ -204,7 +225,7 @@ def analytics_compability():
         for user_id in map(int, request.args.getlist("users"))
     ])
 
-    user2username = dict(db.session.query(User.id, User.username).all())
+    user2username = get_user2username()
     
     length2groups = [
         (length, filter(lambda (users, set): len(set) > 0, sorted([
@@ -223,30 +244,24 @@ def analytics_compability():
 @app.route("/analytics/the_only_ones")
 @cached_analytics_view
 def analytics_the_only_ones():
-    user2artist2scrobbles = dict([
-        (user, dict(
-            db.session.query(Scrobble.artist, func.count(Scrobble.id)).\
-                       group_by(Scrobble.artist).\
-                       filter_by(user_id=user).\
-                       having(
-                           func.count(Scrobble.id) >= (int(request.args.get("more_than_x_scrobbles_us"))
-                                                       if user in map(int, request.args.getlist("us"))
-                                                       else int(request.args.get("more_than_x_scrobbles_them")))
-            )
-        ))
-        for user in map(int, request.args.getlist("us")) + map(int, request.args.getlist("them"))
-    ])
-    user2artistlower2scrobbles = dict([(user, dict([(artist.lower(), scrobbles) for artist, scrobbles in user2artist2scrobbles[user].items()])) for user in user2artist2scrobbles.keys()])
+    us = request.args.getlist("us", type=int)
+    them = request.args.getlist("them", type=int)
+    more_than_x_scrobbles_us = request.args.get("more_than_x_scrobbles_us", type=int)
+    more_than_x_scrobbles_them = request.args.get("more_than_x_scrobbles_them", type=int)
+    user2artist2scrobbles = get_user2artist2scrobbles(us + them,
+                                                      lambda user: (more_than_x_scrobbles_us if user in us
+                                                                    else more_than_x_scrobbles_them))
+    user2artistlower2scrobbles = get_user2artistlower2scrobbles(user2artist2scrobbles)
     
-    user2username = dict(db.session.query(User.id, User.username).all())
-    userids_sorted = sorted(map(int, request.args.getlist("us")), key=lambda id: user2username[id])
+    user2username = get_user2username()
+    userids_sorted = sorted(us, key=lambda id: user2username[id])
 
     table_header = [user2username[id] for id in userids_sorted]
     table_body = sorted([
         (artist, [user2artistlower2scrobbles[user][artist.lower()] for user in userids_sorted])
-        for artist in set.union(*map(set, [artist2scrobbles.keys() for artist2scrobbles in user2artist2scrobbles.values()]))
-        if reduce(operator.and_, [artist.lower() in user2artistlower2scrobbles[user].keys()
-                                  if user in map(int, request.args.getlist("us"))
+        for artist in set.union(*map(set, [artist2scrobbles.keys()
+                                           for artist2scrobbles in user2artist2scrobbles.values()]))
+        if reduce(operator.and_, [artist.lower() in user2artistlower2scrobbles[user].keys() if user in us
                                   else artist.lower() not in user2artistlower2scrobbles[user].keys()
                                   for user in user2artist2scrobbles.keys()])
     ], key=lambda t: -sum(t[1]))
@@ -604,3 +619,37 @@ def analytics_coincidences():
         doves[", ".join(sorted([user.username for user in users]))] += 1
 
     return dict(coincidences=coincidences, doves=sorted(filter(lambda (k, v): v >= 10, doves.items()), key=lambda (k, v): -v))
+
+
+@app.route("/analytics/first_users_by_artist")
+@cached_analytics_view
+def analytics_first_users_by_artist():
+    us = request.args.getlist("us", type=int)
+    them = request.args.getlist("them", type=int)
+    min_scrobbles = request.args.get("min_scrobbles", type=int)
+    user2artist2scrobbles = get_user2artist2scrobbles(us + them, min_scrobbles)
+    user2artistlower2scrobbles = get_user2artistlower2scrobbles(user2artist2scrobbles)
+
+    user2username = get_user2username()
+
+    artist2first_users = {artist: map(operator.itemgetter(1),
+                                      filter(lambda (i, user_id): i == 0 or user_id in us,
+                                             enumerate(sorted(filter(lambda user_id: artist.lower() in user2artistlower2scrobbles[user_id],
+                                                                     unique_items(us + them)),
+                                                              key=lambda user: -user2artistlower2scrobbles[user][artist.lower()]))))
+                          for artist in unique_items(sum((v.keys() for v in user2artist2scrobbles.values()), []),
+                                                     key=lambda artist: artist.lower())}
+    user2artists = [(user2username[user_id],
+                     sorted([(artist,
+                              user2artistlower2scrobbles[user_id][artist.lower()],
+                              ((user2username[first_users[1]],
+                                user2artistlower2scrobbles[first_users[1]][artist.lower()])
+                               if len(first_users) > 1
+                               else None))
+                             for artist, first_users in artist2first_users.iteritems()
+                             if first_users[0] == user_id],
+                            key=lambda (a, b, c): -b))
+                    for user_id in sorted(us, key=lambda id: user2username[id])]
+
+    return dict(title="Пользователи, первые по количеству прослушиваний исполнителей",
+                user2artists=user2artists)

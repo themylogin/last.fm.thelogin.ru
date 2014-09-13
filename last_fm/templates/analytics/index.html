@@ -169,4 +169,17 @@
     
     {% call form("coincidences", "Удивительные совпадения", "иногда так случается, что разные пользователи одновременно слушают одну и ту же музыку", "Подивиться") %}
     {% endcall %}
+
+    {% call form("first_users_by_artist", "Большой любитель", "какие пользователи первые по количеству прослушиваний разных исполнителей?", "Я отберу у тебя всё!") %}
+        <div class="row">
+            <div class="col-md-2" style="padding-top: 10px;">
+                {{ select_users("us", "", show_select_all=True) }}
+            </div>
+            <div class="col-md-2">
+                {{ select_users("them", "Среди пользователей:", show_select_all=True) }}
+            </div>
+        </div>
+
+        {{ integer_input("min_scrobbles", "Минимальное количество скробблов исполнителя", 250) }}
+    {% endcall %}
 {% endblock %}
