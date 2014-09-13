@@ -15,7 +15,7 @@
         <tbody>
             {% for user, artists in user2artists %}
                 <tr>
-                    <td colspan="3"><h3>{{ user }}</h3></td>
+                    <td colspan="3"><h3 style="margin: 0;">{{ user }}</h3></td>
                 </tr>
                 {% for artist, scrobbles, second_user in artists %}
                     <tr>
@@ -23,7 +23,9 @@
                         <td>{{ scrobbles }}</td>
                         <td>
                             {% if second_user %}
-                                {{ second_user[0] }} ({{ second_user[1] }})
+                                <div style="{% if scrobbles - second_user[1] <= 50 %}color: #ff0000;{% endif %}">
+                                    {{ second_user[0] }} ({{ second_user[1] }})
+                                </div>
                             {% endif %}
                         </td>
                     </tr>
