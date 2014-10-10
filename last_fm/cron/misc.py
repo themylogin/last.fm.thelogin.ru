@@ -6,9 +6,10 @@ import itertools
 import logging
 import mpd
 from sqlalchemy.sql import func, literal_column
+import time
 import twitter
 
-
+from last_fm.analytics import calculate_first_real_scrobble
 from last_fm.celery import cron
 from last_fm.db import db
 from last_fm.models import *
@@ -241,3 +242,16 @@ def calculate_coincidences():
         """, {"min" : i, "max" : i + step - 1})
 
     db.session.execute("COMMIT")
+
+
+@cron.job(minute="*/5")
+def calculate_first_real_scrobbles():
+    session = db.create_scoped_session()
+
+    for user_artist in session.query(UserArtist).\
+                               filter(UserArtist.first_scrobble <= time.time() - 360 * 86400,
+                                      UserArtist.first_real_scrobble == None):
+        user_artist.first_real_scrobble = calculate_first_real_scrobble(session, user_artist.user,
+                                                                        user_artist.artist.name).uts
+
+    session.commit()

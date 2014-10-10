@@ -11,7 +11,7 @@ __all__ = [b"User", b"Scrobble", b"Artist", b"UserArtist",
            b"ReleaseFeed", b"Release", b"UserRelease", b"UserArtistIgnore",
            b"ApproximateTrackLength", b"Coincidence",
            b"GuestVisit",
-           b"Repeat"]
+           b"Repeat", b"Anniversary"]
 
 
 class User(db.Model, UserMixin):
@@ -44,6 +44,9 @@ class User(db.Model, UserMixin):
     twitter_post_repeat_start   = db.Column(db.Boolean, default=True)
 
     twitter_track_artist_milestones = db.Column(db.Boolean, default=False)
+
+    twitter_track_artist_anniversaries              = db.Column(db.Boolean, default=False)
+    twitter_track_artist_anniversaries_min_count    = db.Column(db.Integer, default=250)
 
     twitter_win_artist_races        = db.Column(db.Boolean, default=False)
     twitter_artist_races_min_count  = db.Column(db.Integer, default=250)
@@ -83,7 +86,7 @@ class Scrobble(db.Model):
 
 class Artist(db.Model):
     id                  = db.Column(db.Integer, primary_key=True)
-    name                = db.Column(db.String(255), index=True)
+    name                = db.Column(db.String(255), nullable=False, unique=True)
 
 
 class UserArtist(db.Model):
@@ -193,3 +196,13 @@ class Repeat(db.Model):
     total           = db.Column(db.Integer)
 
     user            = db.relationship("User", foreign_keys=[user_id])
+
+
+class Anniversary(db.Model):
+    id              = db.Column(db.Integer, primary_key=True)
+    user_id         = db.Column(db.Integer, db.ForeignKey("user.id"))
+    artist_id       = db.Column(db.Integer, db.ForeignKey("artist.id"))
+    anniversary     = db.Column(db.Integer)
+
+    user            = db.relationship("User", foreign_keys=[user_id])
+    artist          = db.relationship("Artist", foreign_keys=[artist_id])
