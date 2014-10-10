@@ -7,11 +7,11 @@ import json
 
 from last_fm.db import db
 
-__all__ = [b"User", b"Scrobble", b"UserArtist",
+__all__ = [b"User", b"Scrobble", b"Artist", b"UserArtist",
            b"ReleaseFeed", b"Release", b"UserRelease", b"UserArtistIgnore",
            b"ApproximateTrackLength", b"Coincidence",
            b"GuestVisit",
-           b"Repeat", b"MilestoneCalculationTimestamp"]
+           b"Repeat"]
 
 
 class User(db.Model, UserMixin):
@@ -81,13 +81,21 @@ class Scrobble(db.Model):
                                                                             foreign_keys=[artist, track])
 
 
-class UserArtist(db.Model):
-    id          = db.Column(db.Integer, primary_key=True)
-    user_id     = db.Column(db.Integer, db.ForeignKey("user.id"))
-    artist      = db.Column(db.String(255), index=True)
-    scrobbles   = db.Column(db.Integer, index=True)
+class Artist(db.Model):
+    id                  = db.Column(db.Integer, primary_key=True)
+    name                = db.Column(db.String(255), index=True)
 
-    user        = db.relationship("User", foreign_keys=[user_id])
+
+class UserArtist(db.Model):
+    id                  = db.Column(db.Integer, primary_key=True)
+    user_id             = db.Column(db.Integer, db.ForeignKey("user.id"))
+    artist_id           = db.Column(db.Integer, db.ForeignKey("artist.id"))
+    scrobbles           = db.Column(db.Integer, index=True)
+    first_scrobble      = db.Column(db.Integer)
+    first_real_scrobble = db.Column(db.Integer)
+
+    user                = db.relationship("User", foreign_keys=[user_id])
+    artist              = db.relationship("Artist", foreign_keys=[artist_id])
 
 ###
 
@@ -185,8 +193,3 @@ class Repeat(db.Model):
     total           = db.Column(db.Integer)
 
     user            = db.relationship("User", foreign_keys=[user_id])
-
-
-class MilestoneCalculationTimestamp(db.Model):
-    id              = db.Column(db.Integer, primary_key=True)
-    uts             = db.Column(db.Integer)
