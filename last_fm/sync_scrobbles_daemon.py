@@ -4,8 +4,9 @@ from __future__ import absolute_import, unicode_literals
 from collections import defaultdict
 from datetime import datetime, timedelta
 from flask import abort, Response
+import json
 import logging
-from lxml import objectify, etree
+from lxml import objectify
 import socket
 from sqlalchemy.sql import func
 import threading
@@ -108,6 +109,7 @@ def update_scrobbles(user, asap=False):
         page = 1
         pages = -1
         scrobbles = []
+        now_playing = None
         while pages == -1 or page <= pages:
             logger.debug("Opening %s's page %d of %d", user.username, page, pages)
             xml = get_recent_tracks(user, **{"from": download_from, "to": to, "page": page})
@@ -119,6 +121,9 @@ def update_scrobbles(user, asap=False):
                 try:
                     date = int(track.date.get("uts"))
                 except:
+                    now_playing = {"artist": unicode(track.artist),
+                                   "album": unicode(track.album),
+                                   "track": unicode(track.name)}
                     continue
 
                 if to == "":
@@ -147,6 +152,8 @@ def update_scrobbles(user, asap=False):
             logger.info("Inserted %d scrobbles for %s", len(scrobbles), user.username)
 
         session.commit()
+
+        return now_playing
 
 
 ##     ##    ###    #### ##    ##    ##        #######   #######  ########  
@@ -193,8 +200,7 @@ def main_loop():
 def web_update_scrobbles(username):
     user = User.query.filter_by(username=username).first_or_404()
     try:
-        update_scrobbles(user, asap=True)
-        return Response("")
+        return Response(json.dumps(update_scrobbles(user, asap=True)), headers={b"Content-type": b"application/json"})
     except Exception:
         logger.exception("Failed to update scrobbles on user request")
         abort(500)
