@@ -109,6 +109,7 @@ def update_scrobbles(user, asap=False):
         page = 1
         pages = -1
         scrobbles = []
+        got_track = False
         now_playing = None
         while pages == -1 or page <= pages:
             logger.debug("Opening %s's page %d of %d", user.username, page, pages)
@@ -118,6 +119,7 @@ def update_scrobbles(user, asap=False):
                 pages = int(xml.recenttracks.get("totalPages"))
 
             for track in xml.recenttracks.iter("track"):
+                got_track = True
                 try:
                     date = int(track.date.get("uts"))
                 except:
@@ -152,6 +154,17 @@ def update_scrobbles(user, asap=False):
             logger.info("Inserted %d scrobbles for %s", len(scrobbles), user.username)
 
         session.commit()
+
+        if not got_track and download_from != 0:
+            xml = get_recent_tracks(user)
+
+            for track in xml.recenttracks.iter("track"):
+                try:
+                    track.date.get("uts")
+                except:
+                    now_playing = {"artist": unicode(track.artist),
+                                   "album": unicode(track.album),
+                                   "track": unicode(track.name)}
 
         return now_playing
 
