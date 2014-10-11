@@ -17,7 +17,7 @@ from last_fm.app import app
 from last_fm.celery import cron
 from last_fm.db import db
 from last_fm.models import *
-from last_fm.utils.model import get_user_artists
+from last_fm.utils.model import get_artist_id, get_user_artists
 
 logger = logging.getLogger(__name__)
 
@@ -49,11 +49,16 @@ def update_releases():
 
 @cron.job(hour=5, minute=0)
 def update_user_artists():
-    for u in db.session.query(User).\
-                        filter(User.download_scrobbles == False,
-                               (User.last_library_update == None) |\
-                                   (User.last_library_update <= datetime.now() - timedelta(days=7))):
+    session = db.create_scoped_session()
+    users = list(session.query(User).\
+                         filter(User.download_scrobbles == False,
+                                (User.last_library_update == None) |\
+                                    (User.last_library_update <= datetime.now() - timedelta(days=7))))
+    session.remove()
+
+    for u in users:
         session = db.create_scoped_session()
+        artist_session = db.create_scoped_session()
 
         user = session.query(User).get(u.id)
 
@@ -72,7 +77,7 @@ def update_user_artists():
                                                                                              limit=200,
                                                                                              page=page))).read(),
                 objectify.makeparser(encoding="utf-8", recover=True)
-            ), logger=logger)
+            ), max_tries=5, exceptions=((urllib2.HTTPError, lambda e: e.code not in [400]),), logger=logger)
 
             if pages == -1:
                 pages = int(xml.artists.get("totalPages"))
@@ -80,7 +85,7 @@ def update_user_artists():
             for artist in xml.artists.iter("artist"):
                 user_artist = UserArtist()
                 user_artist.user = user
-                user_artist.artist = unicode(artist.name)
+                user_artist.artist_id = get_artist_id(artist_session, unicode(artist.name))
                 user_artist.scrobbles = int(artist.playcount)
                 session.add(user_artist)
 
@@ -88,6 +93,7 @@ def update_user_artists():
 
             page = page + 1
 
+        artist_session.commit()
         session.commit()
 
 

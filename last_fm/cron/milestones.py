@@ -11,6 +11,7 @@ import urllib2
 from last_fm.celery import cron
 from last_fm.db import db
 from last_fm.models import *
+from last_fm.utils.model import get_artist_id
 from last_fm.utils.twitter import get_api_for_user, post_tweet
 
 logger = logging.getLogger(__name__)
@@ -25,15 +26,6 @@ def post_tweet(user, text):
 @cron.job(minute="*/30")
 def tweet_milestones():
     session = db.create_scoped_session()
-
-    def get_artist_id(artist_name):
-        artist = session.query(Artist).filter(Artist.name == artist_name).first()
-        if artist is None:
-            artist = Artist()
-            artist.name = artist_name
-            session.add(artist)
-            session.commit()
-        return artist.id
 
     def get_artist_name(artist_id):
         return session.query(Artist).get(artist_id).name
@@ -57,7 +49,7 @@ def tweet_milestones():
         user2artist2scrobbles[user] = {}
         user2artist2scrobbles[user]["now"] = defaultdict(lambda: 0,
                                                          map(lambda (artist, scrobbles):
-                                                                 (get_artist_id(artist), scrobbles),
+                                                                 (get_artist_id(session, artist), scrobbles),
                                                              session.query(Scrobble.artist, func.count(Scrobble.id)).\
                                                                      group_by(Scrobble.artist).\
                                                                      filter(Scrobble.user == user).\
