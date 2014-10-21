@@ -13,6 +13,7 @@ import last_fm.views.analytics
 import last_fm.views.conky
 import last_fm.views.index
 import last_fm.views.login
+import last_fm.views.misc
 import last_fm.views.usercp
 
 

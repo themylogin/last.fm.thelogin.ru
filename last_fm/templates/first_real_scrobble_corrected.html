@@ -1,0 +1,38 @@
+{% extends "base.html" %} 
+
+{% block title_part %}Коррекция первого настоящего скроббла{% if artist %} {{ artist.artist.name }}{% endif %}{% endblock %}
+
+{% block container %}
+    {% if artist %}
+        <h1>{{ artist.artist.name }}</h1>
+        <h3>Выберите первый настоящий скроббл</h3>
+
+        <form action="{{ url_for('first_real_scrobble_corrected') }}" class="form" method="post" role="form">
+            <table class="table table-striped table-bordered table-condensed fixed-header">
+                <thead>
+                    <th></th>
+                    <th>Дата</th>
+                    <th>Трек</th>
+                </thead>
+                <tbody>
+                    {% for scrobble in scrobbles %}
+                        <tr>
+                            <td>
+                                <input type="radio" name="uts" value="{{ scrobble.uts }}" {% if scrobble.uts == artist.first_real_scrobble %}checked="checked"{% endif %} />
+                            </td>
+                            <td>{{ scrobble.datetime.strftime("%d-%m-%Y %H:%M:%S") }}</td>
+                            <td>{{ scrobble.track }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            <div style="margin: 20px 0;">
+                <input type="hidden" name="artist" value="{{ artist.id }}" />
+                <input type="submit" class="btn btn-primary" value="Сохранить" />
+            </div>
+        </form>
+    {% else %}
+        Все настоящие скробблы выбраны, спасибо за потраченное время!
+    {% endif %}
+{% endblock %}

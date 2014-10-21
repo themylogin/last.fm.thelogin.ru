@@ -6,10 +6,11 @@ from sqlalchemy.sql import func
 
 from last_fm.models import *
 
-__all__ = [b"calculate_first_real_scrobble"]
+__all__ = [b"find_day2scrobbles", b"find_day2scrobbles_gaps", b"find_first_scrobble_by_first_scrobble_appx",
+           b"calculate_first_real_scrobble"]
 
 
-def calculate_first_real_scrobble(session, user, artist):
+def find_day2scrobbles(session, user, artist):
     day2scrobbles = OrderedDict([(day, 0)
                                  for day in range(int(session.query(func.min(Scrobble.uts)).\
                                                               filter(Scrobble.user == user,
@@ -37,6 +38,10 @@ def calculate_first_real_scrobble(session, user, artist):
             break
         del day2scrobbles[day]
 
+    return day2scrobbles
+
+
+def find_day2scrobbles_gaps(day2scrobbles):
     gaps = {}
     for day, scrobbles in day2scrobbles.iteritems():
         gaps[day + 1] = 0
@@ -44,6 +49,22 @@ def calculate_first_real_scrobble(session, user, artist):
         while gap_day in day2scrobbles and day2scrobbles[gap_day] == 0:
             gaps[day + 1] += 1
             gap_day += 1
+
+    return gaps
+
+
+def find_first_scrobble_by_first_scrobble_appx(session, user, artist, first_scrobble_appx):
+    return session.query(Scrobble).\
+                   filter(Scrobble.user == user,
+                          Scrobble.artist == artist,
+                          Scrobble.uts >= first_scrobble_appx).\
+                   order_by(Scrobble.uts).\
+                   first()
+
+
+def calculate_first_real_scrobble(session, user, artist):
+    day2scrobbles = find_day2scrobbles(session, user, artist)
+    gaps = find_day2scrobbles_gaps(day2scrobbles)
 
     total_scrobbles = sum(day2scrobbles.values())
     total_days = len(day2scrobbles)
@@ -58,9 +79,4 @@ def calculate_first_real_scrobble(session, user, artist):
                 first_scrobble_appx = sorted(day2scrobbles.keys())[0] * 86400
             break
 
-    return session.query(Scrobble).\
-                   filter(Scrobble.user == user,
-                          Scrobble.artist == artist,
-                          Scrobble.uts >= first_scrobble_appx).\
-                   order_by(Scrobble.uts).\
-                   first()
+    return find_first_scrobble_by_first_scrobble_appx(session, user, artist, first_scrobble_appx)

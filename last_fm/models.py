@@ -96,6 +96,7 @@ class UserArtist(db.Model):
     scrobbles           = db.Column(db.Integer, index=True)
     first_scrobble      = db.Column(db.Integer)
     first_real_scrobble = db.Column(db.Integer)
+    first_real_scrobble_corrected = db.Column(db.Integer)
 
     user                = db.relationship("User", foreign_keys=[user_id])
     artist              = db.relationship("Artist", foreign_keys=[artist_id])
