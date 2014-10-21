@@ -201,6 +201,7 @@ $(function(){
     $.each({
         "#twitter_track_repeats": ".form-group:has(#twitter_repeats_min_count), .checkbox:has(#twitter_post_repeat_start)",
         "#twitter_win_artist_races" : ".form-group:has(#twitter_artist_races_min_count)",
+        "#twitter_track_artist_anniversaries" : ".form-group:has(#twitter_track_artist_anniversaries_min_count)",
     }, function(parentSelector, childrenSelector){
         $(parentSelector).on("change", function(){
             var $children = $(childrenSelector);

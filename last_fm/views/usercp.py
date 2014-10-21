@@ -67,6 +67,10 @@ def usercp():
         twitter_artist_races_min_count      = fields.IntegerField(label="Минимальное количество скробблов исполнителя (от 250)", validators=[StopIfUnchecked("twitter_win_artist_races"),
                                                                                                                                              validators.NumberRange(min=250, message="Не меньше 250!")])
         twitter_lose_artist_races           = fields.BooleanField(label="Постить, когда друг выигрывает меня в гонке")
+
+        twitter_track_artist_anniversaries              = fields.BooleanField(label="Постить годовщины")
+        twitter_track_artist_anniversaries_min_count    = fields.IntegerField(label="Минимальное количество скробблов исполнителя (от 250)", validators=[StopIfUnchecked("twitter_track_artist_anniversaries"),
+                                                                                                                                             validators.NumberRange(min=250, message="Не меньше 250!")])
  
         submit                      = fields.SubmitField(label="Сохранить")
 
