@@ -27,6 +27,7 @@ setup(
         "python-twitter",
         "pytils",
         "sentry",
+        "texttable",
     ],
     setup_requires=[],
 )

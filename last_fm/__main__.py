@@ -1,13 +1,17 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, division, unicode_literals
 
+from datetime import datetime
+import operator
 import os
 import subprocess
+from texttable import Texttable
 from urlparse import urlparse
 
 from themyutils.sqlalchemy.sql import literal_query
 
 from last_fm import app
+from last_fm.analytics import calculate_first_real_scrobble
 from last_fm.celery import cron as c
 from last_fm.db import db
 from last_fm.manager import manager
@@ -18,6 +22,55 @@ from last_fm.models import *
 def cron(job):
     app.debug = True
     c.jobs["last_fm.cron.%s" % job]()
+
+
+@manager.command
+def debug_first_real_scrobble(user_id, min_scrobbles=250):
+    user = db.session.query(User).get(user_id)
+    user_artists = list(db.session.query(UserArtist).\
+                                   join(Artist).\
+                                   filter(UserArtist.user == user,
+                                          UserArtist.scrobbles >= min_scrobbles,
+                                          UserArtist.first_real_scrobble != None,
+                                          UserArtist.first_real_scrobble_corrected != None).\
+                                   order_by(Artist.name))
+
+    new_first_real_scrobble = {}
+    for i, user_artist in enumerate(user_artists):
+        artist = user_artist.artist.name
+        print "%s (%d / %d)" % (artist, i + 1, len(user_artists))
+        new_first_real_scrobble[artist] = calculate_first_real_scrobble(db.session, user, artist).uts
+
+    sections = [("Still broken", lambda user_artist, new_first_real_scrobble:\
+                    (user_artist.first_real_scrobble != user_artist.first_real_scrobble_corrected and
+                     new_first_real_scrobble != user_artist.first_real_scrobble_corrected and
+                     new_first_real_scrobble == user_artist.first_real_scrobble)),
+                ("Still broken, but changed", lambda user_artist, new_first_real_scrobble:
+                    (user_artist.first_real_scrobble != user_artist.first_real_scrobble_corrected and
+                     new_first_real_scrobble != user_artist.first_real_scrobble_corrected and
+                     new_first_real_scrobble != user_artist.first_real_scrobble)),
+                ("Newly broken", lambda user_artist, new_first_real_scrobble:
+                    (user_artist.first_real_scrobble == user_artist.first_real_scrobble_corrected and
+                     new_first_real_scrobble != user_artist.first_real_scrobble_corrected)),
+                ("Fixed", lambda user_artist, new_first_real_scrobble:
+                    (user_artist.first_real_scrobble != user_artist.first_real_scrobble_corrected and
+                     new_first_real_scrobble == user_artist.first_real_scrobble_corrected))]
+    for title, condition in sections:
+        has_rows = False
+        table = Texttable()
+        table.header(["Artist", "Real", "Old", "New"])
+        for user_artist in user_artists:
+            artist = user_artist.artist.name
+            if condition(user_artist, new_first_real_scrobble[artist]):
+                has_rows = True
+                table.add_row([artist.encode("utf-8")] +\
+                              map(lambda uts: datetime.fromtimestamp(uts).strftime("%Y-%m-%d %H:%M"),
+                                  [user_artist.first_real_scrobble_corrected,
+                                   user_artist.first_real_scrobble,
+                                   new_first_real_scrobble[artist]]))
+        if has_rows:
+            print "\n%s" % title
+            print table.draw()
 
 
 @manager.command
