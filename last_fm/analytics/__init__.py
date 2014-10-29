@@ -79,4 +79,4 @@ def calculate_first_real_scrobble(session, user, artist):
                 first_scrobble_appx = sorted(day2scrobbles.keys())[0] * 86400
             break
 
-    return find_first_scrobble_by_first_scrobble_appx(session, user, artist, first_scrobble_appx)
+    return find_first_scrobble_by_first_scrobble_appx(session, user, artist, first_scrobble_appx - 5 * 86400)
