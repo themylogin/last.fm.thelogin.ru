@@ -72,6 +72,11 @@ def debug_first_real_scrobble(user_id, min_scrobbles=250):
             print "\n%s" % title
             print table.draw()
 
+    if raw_input("Apply this? (y/n)") == "y":
+        for user_artist in user_artists:
+            user_artist.first_real_scrobble = new_first_real_scrobble[user_artist.artist.name]
+    db.session.commit()
+
 
 @manager.command
 def dump_db_wo_sensitive_data():
