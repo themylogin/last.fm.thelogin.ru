@@ -2,7 +2,6 @@
 from __future__ import absolute_import, division, unicode_literals
 
 from datetime import datetime
-import operator
 import os
 import subprocess
 from texttable import Texttable
@@ -76,6 +75,61 @@ def debug_first_real_scrobble(user_id, min_scrobbles=250):
         for user_artist in user_artists:
             user_artist.first_real_scrobble = new_first_real_scrobble[user_artist.artist.name]
     db.session.commit()
+
+
+@manager.command
+def approximate_first_real_scrobble_max_scrobbles_before_gap(user_id,
+                                                             min_value, max_value,
+                                                             min_percent_value, max_percent_value,
+                                                             min_scrobbles=250):
+    user = db.session.query(User).get(user_id)
+    user_artists = list(db.session.query(UserArtist).\
+                                   join(Artist).\
+                                   filter(UserArtist.user == user,
+                                          UserArtist.scrobbles >= min_scrobbles,
+                                          UserArtist.first_real_scrobble != None,
+                                          UserArtist.first_real_scrobble_corrected != None).\
+                                   order_by(Artist.name))
+
+    table = Texttable()
+    table.header(["Condition", "Broken", "Fixed"])
+
+    for value in range(int(min_value), int(max_value) + 1):
+        print value
+        broken = []
+        fixed = []
+        for i, user_artist in enumerate(user_artists):
+            artist = user_artist.artist.name
+            new_first_real_scrobble = calculate_first_real_scrobble(db.session, user, artist, value).uts
+            if (user_artist.first_real_scrobble == user_artist.first_real_scrobble_corrected and
+                new_first_real_scrobble != user_artist.first_real_scrobble_corrected):
+                broken.append(artist)
+            if (user_artist.first_real_scrobble != user_artist.first_real_scrobble_corrected and
+                new_first_real_scrobble == user_artist.first_real_scrobble_corrected):
+                fixed.append(artist)
+        table.add_row([value,
+                       ("%s:\n%s" % (len(broken), "\n".join(broken))).encode("utf-8"),
+                       ("%s:\n%s" % (len(fixed), "\n".join(fixed))).encode("utf-8")])
+
+    for percent_value in range(int(min_percent_value), int(max_percent_value) + 1):
+        print "%d%%" % percent_value
+        broken = []
+        fixed = []
+        for i, user_artist in enumerate(user_artists):
+            artist = user_artist.artist.name
+            value = user_artist.scrobbles * percent_value / 100 + 0.5
+            new_first_real_scrobble = calculate_first_real_scrobble(db.session, user, artist, value).uts
+            if (user_artist.first_real_scrobble == user_artist.first_real_scrobble_corrected and
+                new_first_real_scrobble != user_artist.first_real_scrobble_corrected):
+                broken.append(artist)
+            if (user_artist.first_real_scrobble != user_artist.first_real_scrobble_corrected and
+                new_first_real_scrobble == user_artist.first_real_scrobble_corrected):
+                fixed.append(artist)
+        table.add_row(["%d%%" % percent_value,
+                       ("%s:\n%s" % (len(broken), "\n".join(broken))).encode("utf-8"),
+                       ("%s:\n%s" % (len(fixed), "\n".join(fixed))).encode("utf-8")])
+
+    print table.draw()
 
 
 @manager.command
