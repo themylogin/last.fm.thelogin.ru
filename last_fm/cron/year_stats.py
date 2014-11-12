@@ -25,7 +25,8 @@ def tweet_year_stats():
     owner_id = 11
 
     year = datetime.now().year - (0 if app.debug else 1)
-    year_start_uts = time.mktime(datetime(year=year, month=1, day=1).timetuple())
+    year_start = datetime(year=year, month=1, day=1)
+    year_start_uts = time.mktime(year_start.timetuple())
     year_end_uts = time.mktime(datetime(year=year, month=12, day=31, hour=23, minute=59, second=59).timetuple())
 
     tweets = []
@@ -61,7 +62,8 @@ def tweet_year_stats():
         if user.id == owner_id:
             datetime_isStart = []
             for came, left in db.session.query(GuestVisit.came, GuestVisit.left).\
-                                         filter(GuestVisit.left != None).\
+                                         filter(GuestVisit.came >= year_start,
+                                                GuestVisit.left != None).\
                                          order_by(GuestVisit.came):
                 datetime_isStart.append((came, True))
                 datetime_isStart.append((left, False))
@@ -82,6 +84,7 @@ def tweet_year_stats():
         else:
             smarthome_visits = db.session.query(GuestVisit.came, GuestVisit.left).\
                                           filter(GuestVisit.user == user,
+                                                 GuestVisit.came >= year_start,
                                                  GuestVisit.left != None)
 
         time_in_smarthome = sum([left - came for came, left in smarthome_visits], timedelta())
