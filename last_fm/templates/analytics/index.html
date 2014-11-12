@@ -152,7 +152,7 @@
 
         {{ integer_input("n", "Взять топ исполнителей", 200) }}
 
-        {{ integer_input("year", "За год", 2013) }}
+        {{ integer_input("year", "За год", now.year if now.month != 1 else now.year - 1) }}
 
         {{ select("sort", "Сортировать по", [("scrobbles",         "Количеству прослушиваний"),
                                              ("scrobbles_a_day",   "Количеству прослушиваний в день"),
