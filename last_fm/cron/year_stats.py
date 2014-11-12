@@ -9,6 +9,7 @@ import time
 from themyutils.datetime.timedelta import timedelta_in_words
 from twitter_overkill.utils import *
 
+from last_fm.app import app
 from last_fm.celery import cron
 from last_fm.db import db
 from last_fm.models import *
@@ -23,7 +24,7 @@ def get_gender_verb(user, male, female):
 def tweet_year_stats():
     owner_id = 11
 
-    year = datetime.now().year - 1
+    year = datetime.now().year - (0 if app.debug else 1)
     year_start_uts = time.mktime(datetime(year=year, month=1, day=1).timetuple())
     year_end_uts = time.mktime(datetime(year=year, month=12, day=31, hour=23, minute=59, second=59).timetuple())
 
