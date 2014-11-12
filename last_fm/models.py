@@ -43,6 +43,7 @@ class User(db.Model, UserMixin):
     twitter_repeats_min_count   = db.Column(db.Integer, default=5)
     twitter_post_repeat_start   = db.Column(db.Boolean, default=True)
 
+    twitter_track_chart_milestones = db.Column(db.Boolean, default=False)
     twitter_track_artist_milestones = db.Column(db.Boolean, default=False)
 
     twitter_track_artist_anniversaries              = db.Column(db.Boolean, default=False)

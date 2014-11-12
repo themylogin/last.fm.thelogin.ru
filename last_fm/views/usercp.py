@@ -61,6 +61,7 @@ def usercp():
                                                                                                                        validators.NumberRange(min=5, message="Не меньше 5!")])
         twitter_post_repeat_start   = fields.BooleanField(label="Постить начало репита")
 
+        twitter_track_chart_milestones      = fields.BooleanField(label="Постить изменения в чартах")
         twitter_track_artist_milestones     = fields.BooleanField(label="Постить ачивки скроббов исполнителей (666, 1000, 2000, ...)")
 
         twitter_win_artist_races            = fields.BooleanField(label="Участвовать в гонках исполнителей с друзьями")

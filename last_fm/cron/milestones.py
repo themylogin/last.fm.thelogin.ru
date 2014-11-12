@@ -8,6 +8,8 @@ from sqlalchemy.sql import func
 import twitter
 import urllib2
 
+from twitter_overkill.utils import join_list
+
 from last_fm.celery import cron
 from last_fm.db import db
 from last_fm.models import *
@@ -30,6 +32,14 @@ def tweet_milestones():
     def get_artist_name(artist_id):
         return session.query(Artist).get(artist_id).name
 
+    def get_artist_name2scrobbles(artist_id2scrobbles):
+        return dict(map(lambda (artist_id, scrobbles): (get_artist_name(artist_id), scrobbles),
+                        artist_id2scrobbles.iteritems()))
+
+    chart_milestones_users = session.query(User).\
+                                     filter(User.download_scrobbles == True,
+                                            User.twitter_username != None,
+                                            User.twitter_track_chart_milestones == True)
     artist_milestones_users = session.query(User).\
                                       filter(User.download_scrobbles == True,
                                              User.twitter_username != None,
@@ -81,6 +91,19 @@ def tweet_milestones():
     for user in artist_races_users:
         twitter2user[user.twitter_data["id"]] = user
 
+    # chart changes
+    for user in chart_milestones_users:
+        def get_chart(artist_id2scrobbles):
+            artist2scrobbles = get_artist_name2scrobbles(artist_id2scrobbles)
+            return sorted(artist2scrobbles.keys(), key=lambda artist: (-artist2scrobbles[artist], artist))[:20]
+
+        chart_now = get_chart(user2artist2scrobbles[user]["now"])
+        chart_then = get_chart(user2artist2scrobbles[user]["then"])
+
+        chart_change_tweet_text = chart_change_tweet(chart_now, chart_then)
+        if chart_change_tweet_text:
+            post_tweet(user, chart_change_tweet_text)
+
     # milestones
     for user in artist_milestones_users:
         artist2scrobbles_now = user2artist2scrobbles[user]["now"]
@@ -131,3 +154,31 @@ def tweet_milestones():
                                 ))
 
     session.commit()
+
+
+def chart_change_tweet(old, new):
+    happened = []
+
+    evictors = [n for n in new if n not in old]
+    evicted = [o for o in old if o not in new]
+    if evictors and evicted:
+        happened.append("%s вытеснили %s" % (join_list(evictors), join_list(evicted)))
+
+    old_copy = list(old)
+    new_copy = list(new)
+    while True:
+        for i, overtaker in enumerate(new_copy):
+            if overtaker in old_copy:
+                if i < old_copy.index(overtaker):
+                    overtaken = [o for o in old_copy
+                                 if (old_copy.index(overtaker) > old_copy.index(o) and
+                                     new_copy.index(overtaker) < new_copy.index(o))]
+                    happened.append("%s обогнали %s" % (overtaker, join_list(overtaken)))
+                    old_copy.remove(overtaker)
+                    new_copy.remove(overtaker)
+                    break
+        else:
+            break
+
+    if happened:
+        return "%s %s!" % ("У меня" if len(happened) > 1 else "А у меня", join_list(happened, ", ", ", а "))
