@@ -19,12 +19,6 @@ from last_fm.utils.twitter import get_api_for_user, post_tweet
 logger = logging.getLogger(__name__)
 
 
-"""
-def post_tweet(user, text):
-    print user.username, text
-"""
-
-
 @cron.job(minute="*/30")
 def tweet_milestones():
     session = db.create_scoped_session()
