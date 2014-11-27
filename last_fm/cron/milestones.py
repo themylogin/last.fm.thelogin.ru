@@ -79,12 +79,6 @@ def tweet_milestones():
                                                             Scrobble.artist == artist).\
                                                      scalar()
                 session.add(user_artist)
-            else:
-                if user_artist.scrobbles > scrobbles - 1:
-                    logger.warning("%s's scrobble count for %s decreased significantly. Not updating",
-                                   user.username, get_artist_name(artist_id))
-                    user2artist2scrobbles[user]["now"][artist_id] = user_artist.scrobbles
-                    continue
             user_artist.scrobbles = scrobbles
 
     twitter2user = {}
