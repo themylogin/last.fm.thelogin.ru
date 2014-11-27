@@ -94,7 +94,7 @@ def tweet_milestones():
         chart_now = get_chart(user2artist2scrobbles[user]["now"])
         chart_then = get_chart(user2artist2scrobbles[user]["then"])
 
-        chart_change_tweet_text = chart_change_tweet(chart_now, chart_then)
+        chart_change_tweet_text = chart_change_tweet(chart_then, chart_now)
         if chart_change_tweet_text:
             post_tweet(user, chart_change_tweet_text)
 
