@@ -17,7 +17,7 @@ def first_real_scrobble_corrected():
     if request.method == "POST":
         user_artist = db.session.query(UserArtist).\
                                  filter(UserArtist.user == current_user,
-                                        UserArtist.artist_id == request.form.get("artist", type=int)).\
+                                        UserArtist.id == request.form.get("artist", type=int)).\
                                  one()
         user_artist.first_real_scrobble_corrected = request.form.get("uts", type=int)
         db.session.commit()
