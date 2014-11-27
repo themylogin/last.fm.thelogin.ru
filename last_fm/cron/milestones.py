@@ -160,6 +160,7 @@ def chart_change_tweet(old, new):
 
     old_copy = list(old)
     new_copy = list(new)
+    overtakers = []
     while True:
         for i, overtaker in enumerate(new_copy):
             if overtaker in old_copy:
@@ -167,12 +168,29 @@ def chart_change_tweet(old, new):
                     overtaken = [o for o in old_copy
                                  if (old_copy.index(overtaker) > old_copy.index(o) and
                                      new_copy.index(overtaker) < new_copy.index(o))]
-                    happened.append("%s обогнали %s" % (overtaker, join_list(overtaken)))
+                    overtakers.append(([overtaker], overtaken))
                     old_copy.remove(overtaker)
                     new_copy.remove(overtaker)
                     break
         else:
             break
+    while True:
+        changed = False
+        if len(overtakers) > 1:
+            for i, (overtakers1, overtaken1) in enumerate(overtakers):
+                for j, (overtakers2, overtaken2) in list(enumerate(overtakers))[i + 1:]:
+                    if overtaken2 == overtaken1:
+                        overtakers[i] = (overtakers1 + overtakers2, overtaken1)
+                        del overtakers[j]
+                        changed = True
+                        break
+                else:
+                    continue
+                break
+        if not changed:
+            break
+    for overtaker, overtaken in overtakers:
+        happened.append("%s обогнали %s" % (join_list(overtaker), join_list(overtaken)))
 
     if happened:
         return "%s %s!" % ("У меня" if len(happened) > 1 else "А у меня", join_list(happened, ", ", ", а "))
