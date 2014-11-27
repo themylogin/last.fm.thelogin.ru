@@ -56,3 +56,14 @@ def login_callback():
 def logout():    
     logout_user()
     return redirect(url_for("index"))
+
+
+@app.route("/impersonate/<username>")
+@login_required
+def impersonate(username):
+    if not (current_user.id == 11 or session.get("allow_impersonation")):
+        abort(403)
+
+    login_user(db.session.query(User).filter(User.username == username).one(), remember=True)
+    session["allow_impersonation"] = True
+    return redirect(request.args.get("next", url_for("index")))
