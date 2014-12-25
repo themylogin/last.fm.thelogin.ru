@@ -31,6 +31,7 @@ class User(db.Model, UserMixin):
     download_scrobbles          = db.Column(db.Boolean, index=True, default=False)
     build_releases              = db.Column(db.Boolean, index=True, default=True)
     cheater                     = db.Column(db.Boolean, index=True, default=False)
+    hates_me                    = db.Column(db.Boolean, index=True, default=False)
 
     twitter_username            = db.Column(db.String(32))
     twitter_data                = db.Column(db.PickleType(pickler=json))

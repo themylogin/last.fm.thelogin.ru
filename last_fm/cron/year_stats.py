@@ -82,10 +82,13 @@ def tweet_year_stats():
                         guests_in_house = 0
                         smarthome_visits.append((last_party_start, dt))
         else:
-            smarthome_visits = db.session.query(GuestVisit.came, GuestVisit.left).\
-                                          filter(GuestVisit.user == user,
-                                                 GuestVisit.came >= year_start,
-                                                 GuestVisit.left != None)
+            if not user.hates_me:
+                smarthome_visits = db.session.query(GuestVisit.came, GuestVisit.left).\
+                                              filter(GuestVisit.user == user,
+                                                     GuestVisit.came >= year_start,
+                                                     GuestVisit.left != None)
+            else:
+                smarthome_visits = []
 
         time_in_smarthome = sum([left - came for came, left in smarthome_visits], timedelta())
         if time_in_smarthome:
