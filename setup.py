@@ -28,6 +28,7 @@ setup(
         "pytils",
         "sentry",
         "texttable",
+        "whatapi",
     ],
     setup_requires=[],
 )

@@ -8,6 +8,7 @@ from flask import *
 import json
 import itertools
 import math
+import numpy
 import operator
 import pytils
 from sqlalchemy.orm import joinedload
@@ -535,7 +536,11 @@ def analytics_hitparade():
                         (artist, album, tracks, sum([track[1] for track in tracks]),
                                                 sum([track[3] for track in tracks]),
                                                 sum([track[1] for track in tracks]) / float(year_end_uts - min([track[4] for track in tracks])) * 86400,
-                                                sum([track[3] for track in tracks]) / float(year_end_uts - min([track[4] for track in tracks])) * 86400)
+                                                sum([track[3] for track in tracks]) / float(year_end_uts - min([track[4] for track in tracks])) * 86400,
+                                                numpy.mean(map(operator.itemgetter(1), tracks)),
+                                                numpy.mean(map(operator.itemgetter(1), tracks)) * sum(map(operator.itemgetter(2), tracks)),
+                                                (numpy.median(map(operator.itemgetter(1), tracks)) + numpy.mean(map(operator.itemgetter(1), tracks)) / 1000.0),
+                                                (numpy.median(map(operator.itemgetter(1), tracks)) + numpy.mean(map(operator.itemgetter(1), tracks)) / 1000.0) * sum(map(operator.itemgetter(2), tracks)))
                         for artist, album, tracks in
                         [(artist, album, sorted([
                             [
@@ -563,10 +568,14 @@ def analytics_hitparade():
                         for artist in request.form.getlist("artist")
                     ])
                 ], key={
-                    "scrobbles"         : lambda artist_album_tracks_scrobbles_length_scrobblesADay_lengthADay: -artist_album_tracks_scrobbles_length_scrobblesADay_lengthADay[3],
-                    "scrobbles_a_day"   : lambda artist_album_tracks_scrobbles_length_scrobblesADay_lengthADay: -artist_album_tracks_scrobbles_length_scrobblesADay_lengthADay[5],
-                    "length"            : lambda artist_album_tracks_scrobbles_length_scrobblesADay_lengthADay: -artist_album_tracks_scrobbles_length_scrobblesADay_lengthADay[4],
-                    "length_a_day"      : lambda artist_album_tracks_scrobbles_length_scrobblesADay_lengthADay: -artist_album_tracks_scrobbles_length_scrobblesADay_lengthADay[6],
+                    "scrobbles"         : lambda artist_album_tracks_scrobbles_length_scrobblesADay_lengthADay_mean_meanWithTime_median_medianWithTime: -artist_album_tracks_scrobbles_length_scrobblesADay_lengthADay_mean_meanWithTime_median_medianWithTime[3],
+                    "scrobbles_a_day"   : lambda artist_album_tracks_scrobbles_length_scrobblesADay_lengthADay_mean_meanWithTime_median_medianWithTime: -artist_album_tracks_scrobbles_length_scrobblesADay_lengthADay_mean_meanWithTime_median_medianWithTime[5],
+                    "length"            : lambda artist_album_tracks_scrobbles_length_scrobblesADay_lengthADay_mean_meanWithTime_median_medianWithTime: -artist_album_tracks_scrobbles_length_scrobblesADay_lengthADay_mean_meanWithTime_median_medianWithTime[4],
+                    "length_a_day"      : lambda artist_album_tracks_scrobbles_length_scrobblesADay_lengthADay_mean_meanWithTime_median_medianWithTime: -artist_album_tracks_scrobbles_length_scrobblesADay_lengthADay_mean_meanWithTime_median_medianWithTime[6],
+                    "mean"              : lambda artist_album_tracks_scrobbles_length_scrobblesADay_lengthADay_mean_meanWithTime_median_medianWithTime: -artist_album_tracks_scrobbles_length_scrobblesADay_lengthADay_mean_meanWithTime_median_medianWithTime[7],
+                    "mean_with_time"    : lambda artist_album_tracks_scrobbles_length_scrobblesADay_lengthADay_mean_meanWithTime_median_medianWithTime: -artist_album_tracks_scrobbles_length_scrobblesADay_lengthADay_mean_meanWithTime_median_medianWithTime[8],
+                    "median"            : lambda artist_album_tracks_scrobbles_length_scrobblesADay_lengthADay_mean_meanWithTime_median_medianWithTime: -artist_album_tracks_scrobbles_length_scrobblesADay_lengthADay_mean_meanWithTime_median_medianWithTime[9],
+                    "median_with_time"  : lambda artist_album_tracks_scrobbles_length_scrobblesADay_lengthADay_mean_meanWithTime_median_medianWithTime: -artist_album_tracks_scrobbles_length_scrobblesADay_lengthADay_mean_meanWithTime_median_medianWithTime[10],
                 }[request.args.get("sort")])
             })
 

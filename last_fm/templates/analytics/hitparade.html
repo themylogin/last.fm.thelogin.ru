@@ -109,15 +109,52 @@
     {% if step == 4 %}
         Сортировать по:
         <ul class="nav nav-pills hit-parade-sorter">
-            {% for (k, v) in [('scrobbles', 'Количеству прослушиваний'), ('scrobbles_a_day', 'Количеству прослушиваний в день'), ('length', 'Времени прослушивания'), ('length_a_day', 'Времени прослушивания в день')] %}
+            {% for (k, v) in [('scrobbles', 'Количеству'),
+                              ('scrobbles_a_day', 'Количеству в день'),
+                              ('length', 'Времени'),
+                              ('length_a_day', 'Времени в день'),
+                              ('mean', 'Среднему'),
+                              ('mean_with_time', 'Среднему со временем'),
+                              ('median', 'Медиане'),
+                              ('median_with_time', 'Медиане со временем'),] %}
                 <li{% if sort == k %} class="active"{% endif %}><a href="{{ k|replace('_', '-') }}">{{ v }}</a></li>
             {% endfor %}
         </ul>
 
+        {% macro format_length(length) %}{{ (length / 3600)|round(0, 'floor')|int }}:{% if (length / 60)|int % 60 < 10 %}0{{ (length / 60)|int % 60 }}{% else %}{{ (length / 60)|int % 60 }}{% endif %}{% endmacro %}
+
         <div class="parade">
-        {% for (artist, album, tracks, total_scrobbles, total_length, scrobblesADay, lengthADay) in parade %}
-            <div data-scrobbles="{{ total_scrobbles }}" data-length="{{ total_length }}" data-scrobbles-a-day="{{ scrobblesADay }}" data-length-a-day="{{ lengthADay }}">
-                <h4><span>{{ loop.index }}</span>. {{ artist }} - {{ album }}: {{ total_scrobbles }} скробблов ({{ "%.2f"|format(scrobblesADay) }} в день), {{ (total_length / 3600)|round(0, 'floor')|int }}:{% if (total_length / 60)|int % 60 < 10 %}0{{ (total_length / 60)|int % 60 }}{% else %}{{ (total_length / 60)|int % 60 }}{% endif %} ({{ (lengthADay / 60)|round(0, 'floor')|int }}:{% if lengthADay|int % 60 < 10 %}0{{ lengthADay|int % 60 }}{% else %}{{ lengthADay|int % 60 }}{% endif %} в день)</h4>
+        {% for (artist, album, tracks,
+                total_scrobbles,
+                total_length,
+                scrobbles_a_day,
+                length_a_day,
+                mean,
+                mean_with_time,
+                median,
+                median_with_time) in parade %}
+            <div data-scrobbles="{{ total_scrobbles }}"
+                 data-length="{{ total_length }}"
+                 data-scrobbles-a-day="{{ scrobbles_a_day }}"
+                 data-length-a-day="{{ length_a_day }}"
+                 data-mean="{{ mean }}"
+                 data-mean-with-time="{{ mean_with_time }}"
+                 data-median="{{ median }}"
+                 data-median-with-time="{{ median_with_time }}">
+                <h4>
+                    <span>{{ loop.index }}</span>.
+                    {{ artist }} - {{ album }}
+                </h4>
+                <h5>
+                    {{ total_scrobbles }} скробблов
+                    ({{ "%.2f"|format(scrobbles_a_day) }} в день),
+                    {{ format_length(total_length) }}
+                    ({{ format_length(length_a_day) }} в день),
+                    в среднем {{ mean|round(2) }}
+                    (cо временем {{ format_length(mean_with_time) }}),
+                    медиана {{ median|round(0)|int }}
+                    (со временем {{ format_length(median_with_time) }})
+                </h5>
                 <div class="well">
                     <table class="table">
                         {% for (track, scrobbles, length, total_length, first_scrobble, last_scrobble) in tracks %}
@@ -125,9 +162,9 @@
                                 <td>{{ track }}</td>
                                 <td>{{ scrobbles }}</td>
                                 <td>x</td>
-                                <td>{{ (length / 60)|round(0, 'floor')|int }}:{% if length % 60 < 10 %}0{% endif %}{{ length % 60 }}</td>
+                                <td>{{ format_length(length) }}</td>
                                 <td>=</td>
-                                <td>{{ (total_length / 60)|round(0, 'floor')|int }}:{% if total_length % 60 < 10 %}0{% endif %}{{ total_length % 60 }}</td>
+                                <td>{{ format_length(total_length) }}</td>
                             </tr>
                         {% endfor %}
                     </table>

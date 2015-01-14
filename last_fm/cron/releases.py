@@ -2,6 +2,7 @@
 from __future__ import absolute_import, division, unicode_literals
 
 from datetime import datetime, timedelta
+import dateutil.parser
 import feedparser
 import logging
 from lxml import objectify
@@ -10,6 +11,7 @@ import socket
 from sqlalchemy.sql import func
 import urllib
 import urllib2
+import whatapi
 
 from themyutils.misc import retry
 
@@ -27,24 +29,46 @@ def update_releases():
     socket.setdefaulttimeout(10)
     for feed in db.session.query(ReleaseFeed):
         try:
-            posts = feedparser.parse(feed.url)["items"]
+            for release in find_releases(feed):
+                if db.session.query(func.count(Release.id)).filter_by(title=release.title).scalar() == 0:
+                    release.feed = feed
+                    release.date = datetime.now()
+                    db.session.add(release)
         except:
-            logging.exception("Error downloading RSS %s", feed.url)
-            continue
-        for post in posts:
-            if db.session.query(func.count(Release.id)).filter_by(title=post["title"]).scalar() == 0:
-                release = Release()
-                release.feed = feed
-                release.url = post["link"]
-                release.date = datetime.now()
-                release.title = post["title"]
-                try:
-                    release.content = u"".join([c["value"] for c in post["content"]])
-                except:
-                    release.content = post["summary"]
-                db.session.add(release)
+            logging.exception("Error downloading feed %s", feed.url)
 
     db.session.commit()
+
+
+def find_releases(feed):
+    if feed.url == "what.cd":
+        api = whatapi.WhatAPI(username=app.config["WHAT_CD_USERNAME"], password=app.config["WHAT_CD_PASSWORD"])
+        for group in api.request("browse", searchstr="")["response"]["results"]:
+            if "torrents" not in group:
+                continue
+
+            if min(dateutil.parser.parse(torrent["time"]).year
+                   for torrent in group["torrents"]) < datetime.now().year:
+                continue
+
+            release = Release()
+            release.url = "https://what.cd/torrents.php?id=%d" % group["groupId"]
+            release.title = " - ".join(filter(None, [group.get(k) for k in ("artist", "groupName")]))
+            if group.get("groupYear"):
+                release.title += " (%d)" % group.get("groupYear")
+            release.content = ""
+            yield release
+        return
+
+    for post in feedparser.parse(feed.url)["items"]:
+        release = Release()
+        release.url = post["link"]
+        release.title = post["title"]
+        try:
+            release.content = u"".join([c["value"] for c in post["content"]])
+        except:
+            release.content = post["summary"]
+        yield release
 
 
 @cron.job(hour=5, minute=0)
