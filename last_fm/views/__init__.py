@@ -3,7 +3,10 @@ from __future__ import absolute_import, division, unicode_literals
 
 from datetime import datetime
 from flask.ext.login import current_user
+import os
 from sqlalchemy.sql import func
+
+from themyutils.flask.controllers.image_server import ImageServer
 
 from last_fm.app import app
 from last_fm.db import db
@@ -15,6 +18,7 @@ import last_fm.views.index
 import last_fm.views.login
 import last_fm.views.misc
 import last_fm.views.usercp
+ImageServer(app, os.path.join(app.static_folder, "covers"), allow_internet=True)
 
 
 @app.context_processor

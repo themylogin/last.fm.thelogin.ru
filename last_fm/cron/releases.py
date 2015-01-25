@@ -4,6 +4,7 @@ from __future__ import absolute_import, division, unicode_literals
 from datetime import datetime, timedelta
 import dateutil.parser
 import feedparser
+import HTMLParser
 import logging
 from lxml import objectify
 import re
@@ -30,16 +31,19 @@ comparable_str = lambda s: re.sub(not_w, "", s.lower())
 @cron.job(minute="*/15")
 def update_releases():
     socket.setdefaulttimeout(10)
+    title_comparables = set()
     for feed in db.session.query(ReleaseFeed):
         try:
             for release in find_releases(feed):
                 release.title_comparable = comparable_str(release.title)
-                if db.session.query(func.count(Release.id)).\
-                              filter(Release.title_comparable == release.title_comparable).\
-                              scalar() == 0:
+                if (release.title_comparable not in title_comparables and
+                    db.session.query(func.count(Release.id)).\
+                               filter(Release.title_comparable == release.title_comparable).\
+                               scalar() == 0):
                     release.feed = feed
                     release.date = datetime.now()
                     db.session.add(release)
+                    title_comparables.add(release.title_comparable)
         except:
             logging.exception("Error downloading feed %s", feed.url)
 
@@ -49,6 +53,7 @@ def update_releases():
 def find_releases(feed):
     if feed.url == "what.cd":
         api = whatapi.WhatAPI(username=app.config["WHAT_CD_USERNAME"], password=app.config["WHAT_CD_PASSWORD"])
+        h = HTMLParser.HTMLParser()
         for group in api.request("browse", searchstr="")["response"]["results"]:
             if "torrents" not in group:
                 continue
@@ -59,10 +64,12 @@ def find_releases(feed):
 
             release = Release()
             release.url = "https://what.cd/torrents.php?id=%d" % group["groupId"]
-            release.title = " - ".join(filter(None, [group.get(k) for k in ("artist", "groupName")]))
+            release.title = h.unescape(" - ".join(filter(None, [group.get(k) for k in ("artist", "groupName")])))
             if group.get("groupYear"):
                 release.title += " (%d)" % group.get("groupYear")
             release.content = ""
+            if group.get("cover"):
+                release.content += '<img src="/static/covers/%s"/ >' % group["cover"].replace("://", "/")
             yield release
         return
 
