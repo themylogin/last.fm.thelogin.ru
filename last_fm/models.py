@@ -122,14 +122,15 @@ private_release_feed_user = db.Table("private_release_feed_user",
 
 
 class Release(db.Model):
-    id      = db.Column(db.Integer, primary_key=True)
-    feed_id = db.Column(db.Integer, db.ForeignKey("release_feed.id"))
-    url     = db.Column(db.String(255))
-    date    = db.Column(db.DateTime)
-    title   = db.Column(db.String(255), index=True)
-    content = db.Column(db.Text)
+    id                  = db.Column(db.Integer, primary_key=True)
+    feed_id             = db.Column(db.Integer, db.ForeignKey("release_feed.id"))
+    url                 = db.Column(db.String(255))
+    date                = db.Column(db.DateTime)
+    title               = db.Column(db.String(255))
+    title_comparable    = db.Column(db.String(255), unique=True)
+    content             = db.Column(db.Text)
 
-    feed    = db.relationship("ReleaseFeed", foreign_keys=[feed_id])
+    feed                = db.relationship("ReleaseFeed", foreign_keys=[feed_id])
 
 
 class UserRelease(db.Model):

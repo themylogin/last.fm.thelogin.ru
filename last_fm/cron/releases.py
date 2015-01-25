@@ -23,6 +23,9 @@ from last_fm.utils.model import get_artist_id, get_user_artists
 
 logger = logging.getLogger(__name__)
 
+not_w = re.compile("\W", flags=re.UNICODE)
+comparable_str = lambda s: re.sub(not_w, "", s.lower())
+
 
 @cron.job(minute="*/15")
 def update_releases():
@@ -30,7 +33,10 @@ def update_releases():
     for feed in db.session.query(ReleaseFeed):
         try:
             for release in find_releases(feed):
-                if db.session.query(func.count(Release.id)).filter_by(title=release.title).scalar() == 0:
+                release.title_comparable = comparable_str(release.title)
+                if db.session.query(func.count(Release.id)).\
+                              filter(Release.title_comparable == release.title_comparable).\
+                              scalar() == 0:
                     release.feed = feed
                     release.date = datetime.now()
                     db.session.add(release)
@@ -123,9 +129,6 @@ def update_user_artists():
 
 @cron.job(hour="*/2", minute=0)
 def update_user_releases():
-    not_w = re.compile("\W", flags=re.UNICODE)
-    comparable_str = lambda s: re.sub(not_w, "", s.lower())
-
     for u in db.session.query(User).\
                         filter(User.build_releases == True):
         session = db.create_scoped_session()
@@ -144,7 +147,7 @@ def update_user_releases():
                                       ((ReleaseFeed.private == False) |
                                        (ReleaseFeed.id.in_([f.id for f in u.private_release_feeds])))).\
                                order_by(Release.id.desc()):
-            release_artists = map(comparable_str, re.split(" (-|–|—) ", release.title)[0].split(" (&|and|feat\.?) "))
+            release_artists = map(comparable_str, re.split(" (&|and|feat\.?) ", re.split(" (-|–|—) ", release.title)[0]))
 
             for comparable_artist, artist, scrobbles in artists:
                 if comparable_artist in release_artists:
