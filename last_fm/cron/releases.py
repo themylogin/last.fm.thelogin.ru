@@ -136,7 +136,7 @@ def update_user_releases():
                 filter(UserRelease.user == user).\
                 delete()
 
-        artists = filter(lambda t: len(t[0]) > 3, [(comparable_str(artist), artist, scrobbles)
+        artists = filter(lambda t: len(t[0]) > 0, [(comparable_str(artist), artist, scrobbles)
                                                    for artist, scrobbles in get_user_artists(user, min_scrobbles=10)])
         for release in session.query(Release).\
                                join(ReleaseFeed).\
@@ -144,10 +144,10 @@ def update_user_releases():
                                       ((ReleaseFeed.private == False) |
                                        (ReleaseFeed.id.in_([f.id for f in u.private_release_feeds])))).\
                                order_by(Release.id.desc()):
-            release_title = comparable_str(release.title)
+            release_artist = comparable_str(re.split(" (-|–|—) ", release.title)[0])
 
             for prefix, artist, scrobbles in artists:
-                if release_title.startswith(prefix):
+                if release_artist.startswith(prefix):
                     user_release = UserRelease()
                     user_release.user = user
                     user_release.release = release
