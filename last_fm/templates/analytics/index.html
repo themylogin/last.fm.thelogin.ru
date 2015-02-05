@@ -186,6 +186,8 @@
     {% call form("weekly_hitparade", "Недельные хит-парады", "с Татьяной Плотниковой", "Узнать интересные факты") %}
         {{ select_user() }}
 
-        {{ integer_input("n", "Брать топ исполнителей", 8) }}
+        {{ select("filter", "Брать с ", [("position",         "Позицией"),
+                                         ("scrobbles",        "Количеством скробблов")]) }}
+        {{ integer_input("n", "Не ниже", 8) }}
     {% endcall %}
 {% endblock %}

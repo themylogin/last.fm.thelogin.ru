@@ -15,6 +15,7 @@ from sqlalchemy.orm import joinedload
 from sqlalchemy.sql import distinct, func, literal_column, operators
 import time
 
+from themyutils.collections import KeyTransformDict
 from themyutils.datetime.timedelta import timedelta_in_words
 from themyutils.itertools import unique_items
 
@@ -685,6 +686,10 @@ def analytics_weekly_hitparade():
                                 Scrobble.uts < time.mktime(week_end.timetuple())).\
                          group_by(Scrobble.artist).\
                          order_by(func.count(Scrobble.id).desc())
+        if request.args.get("filter") == "position":
+            top = top[:request.args.get("n", type=int)]
+        if request.args.get("filter") == "scrobbles":
+            top = filter(lambda (a, s): s >= request.args.get("n", type=int), top)
         tops.append((week_start, week_end, top))
         week_start = week_end
 
@@ -713,6 +718,19 @@ def analytics_weekly_hitparade():
                                []),
                            key=lambda hold: -hold["weeks"])
 
+    artist_last_appeared = KeyTransformDict(lambda s: s.lower())
+    disappearances = []
+    for week_start, week_end, top in tops:
+        for artist, scrobbles in top:
+            if artist in artist_last_appeared:
+                if artist_last_appeared != week_start:
+                    disappearances.append({"artist": artist, "start": artist_last_appeared[artist], "end": week_start,
+                                           "weeks": int((week_start - artist_last_appeared[artist]).days / 7)})
+            artist_last_appeared[artist] = week_start
+    disappearances = sorted(disappearances, key=lambda dis: -dis["weeks"])
+
+
     return dict(title="Недельные хит-парады %s" % user.username,
                 top_time=top_time[:50],
-                longest_holds=longest_holds[:50])
+                longest_holds=longest_holds[:50],
+                disappearances=disappearances[:50])

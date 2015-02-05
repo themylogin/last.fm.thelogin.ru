@@ -38,4 +38,21 @@
             {% endfor %}
         </tbody>
     </table>
+
+    <h3>Дольше всех пропадали</h3>
+
+    <table class="table table-striped table-bordered table-condensed">
+        <thead>
+            <th>Исполнитель</th>
+            <th>Время</th>
+        </thead>
+        <tbody>
+            {% for dis in disappearances %}
+                <tr>
+                    <td>{{ dis.artist }}</td>
+                    <td>{{ dis.weeks }} {{ dis.weeks|pluralize(["неделя", "недели", "недель"]) }} ({{ dis.start|russian_strftime("%d %B %Y") }} — {{ dis.end|russian_strftime("%d %B %Y") }})</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
 {% endblock %}
