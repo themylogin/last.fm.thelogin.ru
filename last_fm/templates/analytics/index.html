@@ -182,4 +182,10 @@
 
         {{ integer_input("min_scrobbles", "Минимальное количество скробблов исполнителя", 250) }}
     {% endcall %}
+
+    {% call form("weekly_hitparade", "Недельные хит-парады", "с Татьяной Плотниковой", "Узнать интересные факты") %}
+        {{ select_user() }}
+
+        {{ integer_input("n", "Брать топ исполнителей", 8) }}
+    {% endcall %}
 {% endblock %}

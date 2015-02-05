@@ -23,6 +23,7 @@ setup(
         "Flask-WTF",
         "gevent",
         "gunicorn",
+        "jinja2-pluralize-filter",
         "lxml",
         "python-twitter",
         "pytils",

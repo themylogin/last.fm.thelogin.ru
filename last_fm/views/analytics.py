@@ -662,3 +662,57 @@ def analytics_first_users_by_artist():
 
     return dict(title="Пользователи, первые по количеству прослушиваний исполнителей",
                 user2artists=user2artists)
+
+
+@app.route("/analytics/weekly_hitparade")
+@cached_analytics_view
+def analytics_weekly_hitparade():
+    user = db.session.query(User).get(request.args.get("user", type=int))
+    first_scrobble_at = db.session.query(Scrobble).\
+                                   filter(Scrobble.user == user).\
+                                   order_by(Scrobble.uts).\
+                                   first().\
+                                   datetime
+    week_start = (first_scrobble_at - timedelta(days=first_scrobble_at.weekday())).replace(hour=0, minute=0, second=0,
+                                                                                           microsecond=0)
+
+    tops = []
+    while week_start < datetime.now():
+        week_end = week_start + timedelta(days=7)
+        top = db.session.query(Scrobble.artist, func.count(Scrobble.id)).\
+                         filter(Scrobble.user == user,
+                                Scrobble.uts >= time.mktime(week_start.timetuple()),
+                                Scrobble.uts < time.mktime(week_end.timetuple())).\
+                         group_by(Scrobble.artist).\
+                         order_by(func.count(Scrobble.id).desc())
+        tops.append((week_start, week_end, top))
+        week_start = week_end
+
+    # Больше всего времени провели
+    top_time = defaultdict(lambda: 0)
+    for week_start, week_end, top in tops:
+        for artist, scrobbles in top:
+            top_time[artist] += 1
+    top_time = sorted(top_time.items(), key=lambda (k, v): -v)
+
+    # Дольше всех удерживались
+    longest_hold = defaultdict(list)
+    for week_start, week_end, top in tops:
+        for artist, scrobbles in top:
+            for hold in longest_hold[artist]:
+                if hold["end"] == week_start:
+                    hold["end"] = week_end
+                    hold["weeks"] += 1
+                    break
+            else:
+                longest_hold[artist].append({"start": week_start,
+                                             "end": week_end,
+                                             "weeks": 1})
+    longest_holds = sorted(sum([[dict(artist=artist, **hold) for hold in holds]
+                                for artist, holds in longest_hold.iteritems()],
+                               []),
+                           key=lambda hold: -hold["weeks"])
+
+    return dict(title="Недельные хит-парады %s" % user.username,
+                top_time=top_time[:50],
+                longest_holds=longest_holds[:50])

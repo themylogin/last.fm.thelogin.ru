@@ -4,8 +4,10 @@ from __future__ import absolute_import, division, unicode_literals
 from datetime import datetime
 from flask.ext.login import current_user
 import os
+from pluralize import pluralize
 from sqlalchemy.sql import func
 
+from themyutils.datetime import russian_strftime
 from themyutils.flask.controllers.image_server import ImageServer
 
 from last_fm.app import app
@@ -33,6 +35,10 @@ def context_processor():
                                                             scalar()
 
     return context
+
+
+app.template_filter()(pluralize)
+app.template_filter()(russian_strftime)
 
 
 @app.after_request
