@@ -187,7 +187,8 @@
         {{ select_user() }}
 
         {{ select("filter", "Брать с ", [("position",         "Позицией"),
-                                         ("scrobbles",        "Количеством скробблов")]) }}
+                                         ("scrobbles",        "Количеством скробблов"),
+                                         ("total_scrobbles",  "Минимальным количеством скробблов за всё время")]) }}
         {{ integer_input("n", "Не ниже", 8) }}
     {% endcall %}
 {% endblock %}

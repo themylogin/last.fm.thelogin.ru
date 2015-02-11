@@ -690,6 +690,10 @@ def analytics_weekly_hitparade():
             top = top[:request.args.get("n", type=int)]
         if request.args.get("filter") == "scrobbles":
             top = filter(lambda (a, s): s >= request.args.get("n", type=int), top)
+        if request.args.get("filter") == "total_scrobbles":
+            top = filter(lambda (a, s): db.session.query(func.count(Scrobble.id)).\
+                                                   filter(Scrobble.user == user, Scrobble.artist == a).\
+                                                   scalar() >= request.args.get("n", type=int), top)
         tops.append((week_start, week_end, top))
         week_start = week_end
 
