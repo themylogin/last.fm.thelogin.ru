@@ -737,4 +737,4 @@ def analytics_weekly_hitparade():
     return dict(title="Недельные хит-парады %s" % user.username,
                 top_time=top_time[:50],
                 longest_holds=longest_holds[:50],
-                disappearances=disappearances[:50])
+                disappearances=filter(lambda disappearance: disappearance["weeks"] >= 50, disappearances))
