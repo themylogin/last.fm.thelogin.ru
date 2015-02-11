@@ -33,6 +33,8 @@ class User(db.Model, UserMixin):
     cheater                     = db.Column(db.Boolean, index=True, default=False)
     hates_me                    = db.Column(db.Boolean, index=True, default=False)
 
+    artist_expires_years        = db.Column(db.Integer, default=5)
+
     twitter_username            = db.Column(db.String(32))
     twitter_data                = db.Column(db.PickleType(pickler=json))
     twitter_data_updated        = db.Column(db.DateTime)

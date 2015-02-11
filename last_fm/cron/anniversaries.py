@@ -53,6 +53,11 @@ def tweet_anniversaries():
                 a.anniversary = anniversary
                 session.add(a)
 
+                if db.session.query(func.max(Scrobble.uts)).\
+                              filter(Scrobble.user == user, Scrobble.artist == user_artist.artist.name).\
+                              scalar() < time.time() - user.artist_expires_years * 365 * 86400:
+                    continue
+
                 if anniversary == 1:
                     text = "год"
                 else:

@@ -7,6 +7,10 @@
         {{ form.hidden_tag() }}
         {{ wtf.form_errors(form, hiddens='only') }}
 
+        {{ wtf.form_field(form.artist_expires_years) }}
+
+        <hr />
+
         {{ wtf.form_field(form.devices) }}
         {{ wtf.form_field(form.auto_add_devices) }}
 
