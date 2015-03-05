@@ -1,0 +1,95 @@
+*
+{
+    margin: 0;
+    padding: 0;
+}
+
+html, body
+{
+    width: 1920px;
+    height: 1080px;
+    overflow: hidden;
+}
+
+body
+{
+    font-family: "Times New Roman";
+    font-size: 16px;
+}
+
+/* jssor slider thumbnail navigator skin 01 css */
+/*
+.jssort01 .p           (normal)
+.jssort01 .p:hover     (normal mouseover)
+.jssort01 .pav           (active)
+.jssort01 .pav:hover     (active mouseover)
+.jssort01 .pdn           (mousedown)
+*/
+.jssort01 .w {
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    width: 100%;
+    height: 100%;
+}
+
+.jssort01 .c {
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    width: 68px;
+    height: 68px;
+    border: #000 2px solid;
+}
+
+.jssort01 .p:hover .c, .jssort01 .pav:hover .c, .jssort01 .pav .c {
+    border-width: 0px;
+    top: 2px;
+    left: 2px;
+    width: 68px;
+    height: 68px;
+}
+
+.jssort01 .p:hover .c, .jssort01 .pav:hover .c {
+    top: 0px;
+    left: 0px;
+    width: 70px;
+    height: 70px;
+    border: #fff 1px solid;
+}
+
+
+/* jssor slider arrow navigator skin 05 css */
+/*
+.jssora05l              (normal)
+.jssora05r              (normal)
+.jssora05l:hover        (normal mouseover)
+.jssora05r:hover        (normal mouseover)
+.jssora05ldn            (mousedown)
+.jssora05rdn            (mousedown)
+*/
+.jssora05l, .jssora05r, .jssora05ldn, .jssora05rdn
+{
+    position: absolute;
+    cursor: pointer;
+    display: block;
+    background: url(../img/a17.png) no-repeat;
+    overflow:hidden;
+}
+.jssora05l { background-position: -10px -40px; }
+.jssora05r { background-position: -70px -40px; }
+.jssora05l:hover { background-position: -130px -40px; }
+.jssora05r:hover { background-position: -190px -40px; }
+.jssora05ldn { background-position: -250px -40px; }
+.jssora05rdn { background-position: -310px -40px; }
+
+.col-1 { position: absolute; top: 0; left: 0; width: 700px; height: 1080px; background: #191919; }
+.col-2 { position: absolute; top: 0; left: 700px; width: 480px; height: 1040px; padding: 20px; }
+.col-3 { position: absolute; top: 0; left: 1220px; width: 700px; height: 1080px; background: #191919; }
+
+.artist-title { font-size: 36px; font-family: "Times New Roman"; margin-bottom: 13px; }
+
+.artist-wiki-wrap { position: relative; overflow: hidden; height: 981px; }
+.artist-wiki { position: absolute; top: 0; }
+
+.album-cover { display: block; margin: 30px; }

@@ -15,11 +15,12 @@ from last_fm.db import db
 from last_fm.models import *
 
 import last_fm.views.analytics
-import last_fm.views.conky
+import last_fm.views.dashboard
 import last_fm.views.index
 import last_fm.views.login
 import last_fm.views.misc
 import last_fm.views.usercp
+ImageServer(app, os.path.join(app.static_folder, "artists"), allow_internet=True)
 ImageServer(app, os.path.join(app.static_folder, "covers"), allow_internet=True)
 
 

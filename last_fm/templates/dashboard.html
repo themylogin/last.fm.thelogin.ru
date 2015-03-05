@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Dashboard - last.fm.thelogin.ru</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link href="/static/dashboard.css" rel="stylesheet">
+</head>
+<body>
+    <div class="artist-slider-template" style="display: none;">
+        <div style="position: relative; top: 0px; left: 0px; width: 700px; height: 700px; overflow: hidden;">
+            <!-- Loading Screen -->
+            <div u="loading" style="position: absolute; top: 0px; left: 0px;">
+                <div style="filter: alpha(opacity=70); opacity:0.7; position: absolute; display: block; background-color: #000000; top: 0px; left: 0px; width: 100%; height:100%;"></div>
+                <div style="position: absolute; display: block; background: url(/static/loading.gif) no-repeat center center; top: 0px; left: 0px; width: 100%; height:100%;"></div>
+            </div>
+
+            <!-- Slides Container -->
+            <div u="slides" class="slides" style="cursor: move; position: absolute; left: 0px; top: 0px; width: 700px; height: 600px; overflow: hidden;">
+                <!--
+                <div>
+                    <img u="image" src="/static/alila/01.jpg" />
+                    <img u="thumb" src="/static/alila/thumb-01.jpg" />
+                </div>
+                -->
+            </div>
+            
+            <span u="arrowleft" class="jssora05l" style="width: 40px; height: 40px; top: 158px; left: 8px;"></span>
+            <span u="arrowright" class="jssora05r" style="width: 40px; height: 40px; top: 158px; right: 8px"></span>
+            
+            <div u="thumbnavigator" class="jssort01" style="position: absolute; width: 700px; height: 100px; left: 0px; bottom: 0px;">
+                <div u="slides" style="cursor: move;">
+                    <div u="prototype" class="p" style="position: absolute; width: 72px; height: 72px; top: 0; left: 0;">
+                        <div class="w"><div u="thumbnailtemplate" style=" width: 100%; height: 100%; border: none; position: absolute; top: 0; left: 0;"></div></div>
+                        <div class="c"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-1-template" style="display: none;">
+        <div class="artist-slider"></div>
+    </div>
+    <div class="col-2-template" style="display: none;">
+        <div class="artist-title"></div>
+        <div class="artist-wiki-wrap"><div class="artist-wiki"></div></div>
+    </div>
+    <div class="col-3-template" style="display: none;">
+        <img class="album-cover"></div>
+    </div>
+    
+    <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+    <script src="/static/jssor.slider.min.js"></script>
+    <script src="/static/dashboard.js"></script>
+</body>
+</html>

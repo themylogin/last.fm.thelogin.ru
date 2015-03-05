@@ -13,4 +13,4 @@ app = Flask("last_fm")
 app.config.from_object(last_fm.config)
 app.config["RAVEN_IGNORE_EXCEPTIONS"] = [HTTPException]
 
-sentry = Sentry(app)
+# sentry = Sentry(app)

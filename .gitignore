@@ -41,4 +41,5 @@ nosetests.xml
 alembic.ini
 last_fm/config.py
 last_fm/static/dump.sql.gz
+last_fm/static/artists/*
 last_fm/static/covers/*

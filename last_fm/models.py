@@ -5,13 +5,16 @@ from datetime import datetime
 from flask.ext.login import UserMixin
 import json
 
+from themyutils.sqlalchemy.types import MySqlPickleType
+
 from last_fm.db import db
 
 __all__ = [b"User", b"Scrobble", b"Artist", b"UserArtist",
            b"ReleaseFeed", b"Release", b"UserRelease", b"UserArtistIgnore",
            b"ApproximateTrackLength", b"Coincidence",
            b"GuestVisit",
-           b"Repeat", b"Anniversary"]
+           b"Repeat", b"Anniversary",
+           b"DashboardData"]
 
 
 class User(db.Model, UserMixin):
@@ -212,3 +215,12 @@ class Anniversary(db.Model):
 
     user            = db.relationship("User", foreign_keys=[user_id])
     artist          = db.relationship("Artist", foreign_keys=[artist_id])
+
+###
+
+class DashboardData(db.Model):
+    id              = db.Column(db.Integer, primary_key=True)
+    type            = db.Column(db.String(length=255))
+    key             = db.Column(db.String(length=255))
+    value           = db.Column(MySqlPickleType(pickler=json))
+    date            = db.Column(db.Date)
