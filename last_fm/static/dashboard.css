@@ -4,7 +4,7 @@
     padding: 0;
 }
 
-html, body
+html, body, #container
 {
     width: 1920px;
     height: 1080px;
@@ -73,7 +73,7 @@ body
     position: absolute;
     cursor: pointer;
     display: block;
-    background: url(../img/a17.png) no-repeat;
+    background: url(a17.png) no-repeat;
     overflow:hidden;
 }
 .jssora05l { background-position: -10px -40px; }
@@ -83,13 +83,30 @@ body
 .jssora05ldn { background-position: -250px -40px; }
 .jssora05rdn { background-position: -310px -40px; }
 
+.artist-slider-inner { position: relative; top: 0px; left: 0px; width: 700px; height: 700px; overflow: hidden; }
+.col-2-2 .artist-slider-inner { width: 520px; height: 520px; }
+.artist-slider-inner .slides { cursor: move; position: absolute; left: 0px; top: 0px; width: 700px; height: 600px; overflow: hidden; }
+.col-2-2 .artist-slider-inner .slides { width: 520px; height: 420px; }
+.jssora05l, .jssora05r { width: 40px; height: 40px; top: 279px; }
+.col-2-2 .jssora05l, .col-2-2 .jssora05r { width: 40px; height: 40px; top: 189px; }
+.artist-slider-inner .jssort01 { position: absolute; width: 700px; height: 100px; left: 0px; bottom: 0px; }
+.col-2-2 .artist-slider-inner .jssort01 { width: 520px; }
+
 .col-1 { position: absolute; top: 0; left: 0; width: 700px; height: 1080px; background: #191919; }
-.col-2 { position: absolute; top: 0; left: 700px; width: 480px; height: 1040px; padding: 20px; }
+.col-2 { position: absolute; top: 0; left: 700px; width: 480px; height: 1060px; padding: 10px 20px; }
 .col-3 { position: absolute; top: 0; left: 1220px; width: 700px; height: 1080px; background: #191919; }
+.col-2-2 .col-1 { width: 520px; }
+.col-2-2 .col-2 { left: 520px; width: 400px; }
+.col-2-2 .col-2-2 { position: absolute; top: 0; left: 980px; width: 400px; height: 1060px; }
+.col-2-2 .col-3 { left: 1400px; width: 520px; }
 
-.artist-title { font-size: 36px; font-family: "Times New Roman"; margin-bottom: 13px; }
+.artist-title, .track-title { font-size: 36px; font-family: "Times New Roman"; margin: 13px 0; }
 
-.artist-wiki-wrap { position: relative; overflow: hidden; height: 981px; }
+.artist-wiki-wrap { position: relative; overflow: hidden; }
 .artist-wiki { position: absolute; top: 0; }
 
-.album-cover { display: block; margin: 30px; }
+.track-lyrics-wrap { position: relative; overflow: hidden; }
+.track-lyrics { position: absolute; top: 0; }
+
+.album-cover { display: block; margin: 30px; width: 640px; }
+.col-2-2 .album-cover { display: block; margin: 20px; width: 480px; }
