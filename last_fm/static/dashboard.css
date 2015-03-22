@@ -110,3 +110,11 @@ body
 
 .album-cover { display: block; margin: 30px; width: 640px; }
 .col-2-2 .album-cover { display: block; margin: 20px; width: 480px; }
+
+.year { position: absolute; height: 500px; width: 400px; padding: 20px 40px; overflow: hidden; }
+.year.long { height: 1000px; }
+.year.even { background: #eee; }
+.year .title { font-size: 48px; margin-bottom: 10px; }
+.year table { width: 100%; }
+.year table tr td:first-child { max-width: 359px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.year table tr.album { font-style: italic; }

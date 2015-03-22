@@ -25,6 +25,7 @@ setup(
         "gunicorn",
         "jinja2-pluralize-filter",
         "lxml",
+        "pylast",
         "python-twitter",
         "pytils",
         "sentry",
