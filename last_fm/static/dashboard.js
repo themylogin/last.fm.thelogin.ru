@@ -6,26 +6,20 @@ $(function(){
 
     var $container = $("#container");
 
-    function connect()
-    {
-        var socket = new WebSocket("ws://192.168.0.1:8888/");
-        socket.onmessage = function(msg){
-            var response = $.parseJSON(msg.data);
-
-            if (response.state == "play")
-            {
-                showMusic(response.currentartist, response.currentalbum, response.currentsong, response.currentpath);
-            }
-            else
-            {
-                showNoMusic();
-            }
+    var socket = io("ws://192.168.0.1:6671/");
+    socket.emit("notify");
+    socket.on("notify", function(current){
+        if (current.success && current.success.state == "play")
+        {
+            $.get("http://console.thelogin.ru/mpd/current", function(current){
+                showMusic(current.song.artist, current.song.album, current.song.title, current.song.file);
+            });
         }
-        socket.onclose = function(){
-            setTimeout(connect, 1000);
-        };
-    }
-    connect();
+        else
+        {
+            showNoMusic();
+        }
+    });
 
     // showMusic("Velvet Acid Christ", "", "Fun With Drugs", "Rave/Industrial/Velvet Acid Christ/1999 - Fun With Razors/Fun With Knives/05 - Fun With Drugs.flac");
     // showMusic("Velvet Acid Christ", "", "Decypher", "Rave/Industrial/Velvet Acid Christ/1999 - Fun With Razors/Fun With Knives/01 - Decypher.flac");
