@@ -152,9 +152,7 @@ def update_user_releases():
                                                    for artist, scrobbles in get_user_artists(user, min_scrobbles=10)])
         for release in session.query(Release).\
                                join(ReleaseFeed).\
-                               filter(Release.date > datetime.now() - timedelta(days=30),
-                                      ((ReleaseFeed.private == False) |
-                                       (ReleaseFeed.id.in_([f.id for f in u.private_release_feeds])))).\
+                               filter(Release.date > datetime.now() - timedelta(days=30)).\
                                order_by(Release.id.desc()):
             release_artists = map(comparable_str, re.split(" (&|and|feat\.?) ", re.split(" (-|–|—) ", release.title)[0]))
 
