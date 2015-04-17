@@ -67,6 +67,8 @@ def find_releases(feed):
             release.title = h.unescape(" - ".join(filter(None, [group.get(k) for k in ("artist", "groupName")])))
             if group.get("groupYear"):
                 release.title += " (%d)" % group.get("groupYear")
+            if group.get("releaseType") in ["Single"]:
+                release.title += " (%s)" % group.get("releaseType")
             release.content = ""
             if group.get("cover"):
                 release.content += '<img src="http://last.fm.thelogin.ru/static/covers/%s"/ >' % group["cover"].replace("://", "/")

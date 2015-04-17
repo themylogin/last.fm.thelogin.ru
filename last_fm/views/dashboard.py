@@ -173,13 +173,15 @@ def dashboard_artist_stats():
         russian_strftime(datetime.now() + timedelta(days=scrobbles_till_next_get / scrobbles_per_day_last_half_year),
                          "%d %B %Y"),
     )
+    next_artist_get_info_interesting = any(d < timedelta(days=365)
+                                           for d in [timedelta(days=scrobbles_till_next_get / scrobbles_per_day_last_week),
+                                                     timedelta(days=scrobbles_till_next_get / scrobbles_per_day_last_month),
+                                                     timedelta(days=scrobbles_till_next_get / scrobbles_per_day_last_half_year)])
 
     my_scrobbles = _user_scrobbles(user, artist)
     closest_winning_enemy = db.session.query(Scrobble.user_id).\
                                        join(User).\
-                                       filter(Scrobble.artist == artist,
-                                              User.twitter_username != None,
-                                              User.twitter_win_artist_races).\
+                                       filter(Scrobble.artist == artist).\
                                        having(func.count(Scrobble.id) > my_scrobbles).\
                                        group_by(Scrobble.user_id).\
                                        order_by(func.count(Scrobble.id).asc()).\
@@ -189,9 +191,7 @@ def dashboard_artist_stats():
         closest_winning_enemy_scrobbles = _user_scrobbles(_closest_winning_enemy, artist)
     closest_losing_enemy = db.session.query(Scrobble.user_id).\
                                       join(User).\
-                                      filter(Scrobble.artist == artist,
-                                             User.twitter_username != None,
-                                             User.twitter_win_artist_races).\
+                                      filter(Scrobble.artist == artist).\
                                       having(func.count(Scrobble.id) < my_scrobbles).\
                                       group_by(Scrobble.user_id).\
                                       order_by(func.count(Scrobble.id).desc()).\
@@ -201,6 +201,7 @@ def dashboard_artist_stats():
         closest_losing_enemy_scrobbles = _user_scrobbles(_closest_losing_enemy, artist)
     winning_line = ""
     losing_line = ""
+    losing_line_interesting = False
     prev_winning_was_never = None
     prev_losing_was_never = None
     for i, (days, desc) in enumerate([(7, ("этой", "недели")),
@@ -220,13 +221,13 @@ def dashboard_artist_stats():
 
             if winning_tempo >= my_tempo:
                 if i == 0:
-                    winning_line += "не догоните @%s никогда" % _closest_winning_enemy.twitter_username
+                    winning_line += "не догоните %s никогда" % _closest_winning_enemy.username
                 else:
                     winning_line += "не догоните никогда"
                 prev_winning_was_never = True
             else:
                 if i == 0:
-                    winning_line += "догоните @%s " % (_closest_winning_enemy.twitter_username)
+                    winning_line += "догоните %s " % (_closest_winning_enemy.username)
                 else:
                     if prev_winning_was_never:
                         winning_line += "догоните "
@@ -247,16 +248,17 @@ def dashboard_artist_stats():
 
             if my_tempo >= losing_tempo:
                 if i == 0:
-                    losing_line += "@%s не догонит вас никогда" % _closest_losing_enemy.twitter_username
+                    losing_line += "%s не догонит вас никогда" % _closest_losing_enemy.username
                 else:
                     losing_line += "не догонит никогда"
                 prev_winning_was_never = True
             else:
                 if i == 0:
-                    losing_line += "@%s догонит вас " % _closest_losing_enemy.twitter_username
+                    losing_line += "%s догонит вас " % _closest_losing_enemy.username
                 else:
                     if prev_winning_was_never:
-                        losing_line += "догоните "
+                        losing_line += "догонит "
+                losing_line_interesting = True
 
                 losing_line += russian_strftime(datetime.now() + timedelta(
                     days=(my_scrobbles - closest_losing_enemy_scrobbles) / (losing_tempo - my_tempo)),
