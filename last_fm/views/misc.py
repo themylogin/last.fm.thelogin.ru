@@ -1,6 +1,7 @@
 # -*- coding=utf-8 -*-
 from __future__ import absolute_import, division, unicode_literals
 
+from datetime import datetime
 from flask import *
 from flask.ext.security import current_user, login_required
 
@@ -37,3 +38,18 @@ def first_real_scrobble_corrected():
                            order_by(Scrobble.uts) if artist else []
 
     return render_template("first_real_scrobble_corrected.html", artist=artist, scrobbles=scrobbles)
+
+
+@app.route("/gets")
+@login_required
+def gets():
+    bbcode = '[align=center][quote][size=15][b]Last.FM Milestones[/b][/size][b][color=black]'
+    for get in db.session.query(Get).\
+                          filter(Get.user == current_user).\
+                          order_by(Get.get):
+        bbcode += "[quote]%dth track: (%s)\n" % (get.get, get.datetime.strftime("%d %b %Y"))
+        bbcode += "[artist]%s[/artist] - [track artist=%s]%s[/track]" % (get.artist, get.artist, get.track)
+        bbcode += "[img]%s[/img][/quote]" % (get.artist_image)
+    bbcode += "[color=navy]Generated on %s[/color]\n" % datetime.now().strftime("%d %b %Y")
+    bbcode += "[color=navy]Get yours [b][url=http://kastuvas.us.to/lastfm/]here[/url][/b][/color][/quote][/color][/b][/quote][/align]"
+    return render_template("gets.html", bbcode=bbcode)

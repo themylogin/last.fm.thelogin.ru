@@ -13,7 +13,7 @@ __all__ = [b"User", b"Scrobble", b"Artist", b"UserArtist",
            b"ReleaseFeed", b"Release", b"UserRelease", b"UserArtistIgnore",
            b"ApproximateTrackLength", b"Coincidence",
            b"GuestVisit",
-           b"Repeat", b"Anniversary",
+           b"Repeat", b"Anniversary", b"Get",
            b"DashboardData"]
 
 
@@ -48,6 +48,8 @@ class User(db.Model, UserMixin):
     twitter_track_repeats       = db.Column(db.Boolean, default=False)
     twitter_repeats_min_count   = db.Column(db.Integer, default=5)
     twitter_post_repeat_start   = db.Column(db.Boolean, default=True)
+
+    twitter_track_gets          = db.Column(db.Boolean, default=False)
 
     twitter_track_chart_milestones = db.Column(db.Boolean, default=False)
     twitter_track_artist_milestones = db.Column(db.Boolean, default=False)
@@ -216,7 +218,20 @@ class Anniversary(db.Model):
     user            = db.relationship("User", foreign_keys=[user_id])
     artist          = db.relationship("Artist", foreign_keys=[artist_id])
 
+
+class Get(db.Model):
+    id              = db.Column(db.Integer, primary_key=True)
+    user_id         = db.Column(db.Integer, db.ForeignKey("user.id"))
+    artist          = db.Column(db.String(255))
+    artist_image    = db.Column(db.String(length=255))
+    track           = db.Column(db.String(255))
+    datetime        = db.Column(db.DateTime)
+    get             = db.Column(db.Integer)
+
+    user            = db.relationship("User", foreign_keys=[user_id])
+
 ###
+
 
 class DashboardData(db.Model):
     id              = db.Column(db.Integer, primary_key=True)

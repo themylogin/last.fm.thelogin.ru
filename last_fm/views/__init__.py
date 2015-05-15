@@ -31,6 +31,9 @@ def context_processor():
     context["now"] = datetime.now()
 
     if current_user.is_authenticated():
+        context["current_user_has_gets"] = db.session.query(func.count(Get)).\
+                                                      filter(Scrobble.user == current_user).\
+                                                      scalar() > 0
         context["current_user_scrobble_count"] = db.session.query(func.count(Scrobble)).\
                                                             filter(Scrobble.user == current_user).\
                                                             scalar()
