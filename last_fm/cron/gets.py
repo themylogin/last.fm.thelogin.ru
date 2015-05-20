@@ -1,17 +1,15 @@
 # -*- coding=utf-8 -*-
 from __future__ import absolute_import, division, unicode_literals
 
-from datetime import datetime, timedelta
-from dateutil.relativedelta import relativedelta
+from bs4 import BeautifulSoup
 import logging
-import math
-from pytils.numeral import get_plural
-from sqlalchemy.sql import func, literal
-import time
+import requests
+from sqlalchemy.sql import func
 
 from last_fm.celery import cron
 from last_fm.db import db
 from last_fm.models import *
+from last_fm.utils.model import update_scrobbles_for_user
 from last_fm.utils.network import get_network
 from last_fm.utils.twitter import post_tweet
 
@@ -33,19 +31,45 @@ def tweet_gets():
                        filter(Get.user == user,
                               Get.get == get).\
                        first() is None:
-                scrobble = session.query(Scrobble).\
-                                   filter(Scrobble.user == user).\
-                                   order_by(Scrobble.uts)\
-                                   [get - 1]
+                logger.debug("%s's %d GET", user.username, get)
+                try:
+                    update_scrobbles_for_user(user)
+                    update_scrobbles_for_user(user)
+                    user_plays_count = int("".join([x.text
+                                                    for x in BeautifulSoup(
+                                                        requests.get(
+                                                            "http://www.lastfm.ru/user/%s" % user.username
+                                                        ).text
+                                                    ).\
+                                                    find("span", class_="userPlays").\
+                                                    find("span", class_="count")]))
+                except:
+                    logger.error("Synchronizing error", exc_info=True)
+                else:
+                    session2 = db.create_scoped_session()
+                    user2 = session2.query(User).get(user.id)
 
-                g = Get()
-                g.user = user
-                g.artist = scrobble.artist
-                g.artist_image = get_network().get_artist(scrobble.artist).get_cover_image()
-                g.track = scrobble.track
-                g.datetime = scrobble.datetime
-                g.get = get
-                session.add(g)
-                session.commit()
+                    db_scrobbles = session2.query(func.count(Scrobble.id)).\
+                                            filter(Scrobble.user == user2).\
+                                            scalar()
+                    logger.debug("user_plays_count = %s, db_scrobbles = %d", user_plays_count, db_scrobbles)
 
-                post_tweet(user, "%d GET: %s – %s!" % (g.get, g.artist, g.track.rstrip("!")))
+                    try:
+                        scrobble = session2.query(Scrobble).\
+                                            filter(Scrobble.user == user2).\
+                                            order_by(Scrobble.uts)\
+                                            [get - 1 - (user_plays_count - db_scrobbles)]
+                    except:
+                        logger.warning("There is no get yet", exc_info=True)
+                    else:
+                        g = Get()
+                        g.user = user2
+                        g.artist = scrobble.artist
+                        g.artist_image = get_network().get_artist(scrobble.artist).get_cover_image()
+                        g.track = scrobble.track
+                        g.datetime = scrobble.datetime
+                        g.get = get
+                        session2.add(g)
+                        session2.commit()
+
+                        post_tweet(user, "%d GET: %s – %s!" % (g.get, g.artist, g.track.rstrip("!")))

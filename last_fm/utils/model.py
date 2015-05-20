@@ -2,6 +2,7 @@
 from __future__ import absolute_import, division, unicode_literals
 
 from sqlalchemy.sql import func
+import urllib2
 
 from last_fm.db import db
 from last_fm.models import *
@@ -28,3 +29,7 @@ def get_user_artists(user, min_scrobbles=0):
                           join(UserArtist).\
                           filter(UserArtist.user == user,
                                  UserArtist.scrobbles >= min_scrobbles)
+
+
+def update_scrobbles_for_user(user):
+    urllib2.urlopen("http://127.0.0.1:46400/update_scrobbles/%s" % user.username).read()

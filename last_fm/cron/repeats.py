@@ -10,6 +10,7 @@ import time
 from last_fm.celery import cron
 from last_fm.db import db
 from last_fm.models import *
+from last_fm.utils.model import update_scrobbles_for_user
 from last_fm.utils.twitter import post_tweet
 
 logger = logging.getLogger(__name__)
@@ -23,7 +24,7 @@ def check_new_repeats():
         session = db.create_scoped_session()
 
         try:
-            urllib2.urlopen("http://127.0.0.1:46400/update_scrobbles/%s" % user.username).read()
+            update_scrobbles_for_user(user)
         except Exception as e:
             logger.exception("Failed to update_scrobbles for %s", user.username)
             continue
@@ -83,7 +84,7 @@ def tweet_repeats():
         repeat = session.query(Repeat).get(repeat.id)
 
         try:
-            urllib2.urlopen("http://127.0.0.1:46400/update_scrobbles/%s" % repeat.user.username).read()
+            update_scrobbles_for_user(repeat.user)
         except Exception as e:
             logger.exception("Failed to update_scrobbles for %s", repeat.user.username)
             continue
