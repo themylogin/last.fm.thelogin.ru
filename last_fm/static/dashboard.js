@@ -178,8 +178,21 @@ $(function(){
                             else
                             {
                                 $col2_2.find(".track-title").remove();
+                                $col2_2.find(".artist-wiki-wrap").remove();
                                 $col2_2.find(".track-lyrics-wrap").css("height", totalHeight);
                                 $col2_2.find(".track-lyrics").css("top", -col2heights["lyrics"]).html(data["lyrics"]);
+
+                                var $wrap1 = $col2.find(".track-lyrics-wrap");
+                                var $wrap2 = $col2_2.find(".track-lyrics-wrap");
+                                var visibleLyricsHeight = (parseInt($wrap1.css("height")) +
+                                                           parseInt($wrap2.css("height")));
+                                if (visibleLyricsHeight < heights["lyrics"])
+                                {
+                                    var fontScaleFactor = heights["lyrics"] / visibleLyricsHeight;
+                                    var fontSize = Math.floor(parseInt($wrap1.css("fontSize")) / fontScaleFactor);
+                                    $wrap1.css("fontSize", fontSize + "px");
+                                    $wrap2.css("fontSize", fontSize + "px");
+                                }
                             }
 
                             var $artistSlider = $(".col-1 .artist-slider");

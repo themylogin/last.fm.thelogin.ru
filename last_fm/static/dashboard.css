@@ -106,6 +106,7 @@ body
 .artist-wiki { position: absolute; top: 0; }
 
 .track-lyrics-wrap { position: relative; overflow: hidden; }
+.track-lyrics-wrap:first-child { top: 10px; }
 .track-lyrics { position: absolute; top: 0; }
 
 .album-cover { display: block; margin: 30px; width: 640px; }
