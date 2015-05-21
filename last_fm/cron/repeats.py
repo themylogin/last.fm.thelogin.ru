@@ -54,23 +54,26 @@ def check_new_repeats():
                      first_scrobble.artist, first_scrobble.track,
                      first_scrobble.id, scrobble_count)
         if scrobble_count >= user.twitter_repeats_min_count:
-            repeat = session.query(Repeat).\
-                             filter(Repeat.user == first_scrobble.user,
-                                    Repeat.artist == first_scrobble.artist,
-                                    Repeat.track == first_scrobble.track,
-                                    Repeat.uts == first_scrobble.uts).\
-                             first()
-            if repeat is None:
-                repeat = Repeat()
-                repeat.user = first_scrobble.user
-                repeat.artist = first_scrobble.artist
-                repeat.track = first_scrobble.track
-                repeat.uts = first_scrobble.uts
-                session.add(repeat)
-                session.commit()
+            if (first_scrobble.artist, first_scrobble.track) not in [
+                ("Magyar Posse", "[untitled]")
+            ]:
+                repeat = session.query(Repeat).\
+                                 filter(Repeat.user == first_scrobble.user,
+                                        Repeat.artist == first_scrobble.artist,
+                                        Repeat.track == first_scrobble.track,
+                                        Repeat.uts == first_scrobble.uts).\
+                                 first()
+                if repeat is None:
+                    repeat = Repeat()
+                    repeat.user = first_scrobble.user
+                    repeat.artist = first_scrobble.artist
+                    repeat.track = first_scrobble.track
+                    repeat.uts = first_scrobble.uts
+                    session.add(repeat)
+                    session.commit()
 
-                if user.twitter_post_repeat_start:
-                    post_tweet(user, "Слушаю на репите %s – %s" % (repeat.artist, repeat.track))
+                    if user.twitter_post_repeat_start:
+                        post_tweet(user, "Слушаю на репите %s – %s" % (repeat.artist, repeat.track))
 
         session.commit()
 
