@@ -6,6 +6,7 @@ SECRET_KEY = ''
 SENTRY_DSN = ""
 
 CELERY_BROKER_URL = "amqp:///last_fm"
+CELERYD_HIJACK_ROOT_LOGGER = False
 
 SQLALCHEMY_DATABASE_URI = "mysql://root@localhost/last_fm"
 

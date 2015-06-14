@@ -20,8 +20,9 @@ Bootstrap(app)
 login_manager.init_app(app)
 app.session_interface = RedisSessionInterface(prefix="last.fm:session:")
 
-if len(sys.argv) == 1:
-    setup_logging_handler("last_fm")
+runner = sys.argv[0].split("/")[-1]
+if runner in ["celery", "gunicorn", "uwsgi"]:
+    setup_logging_handler("last_fm-%s" % runner)
 
     app.config["RAVEN_IGNORE_EXCEPTIONS"] = [HTTPException]
     sentry = Sentry(app)
