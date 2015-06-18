@@ -2,6 +2,7 @@
 from __future__ import absolute_import, division, unicode_literals
 
 from datetime import datetime
+import logging
 import os
 import subprocess
 import sys
@@ -190,4 +191,5 @@ def dump_db_wo_sensitive_data():
 
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.DEBUG)
     manager.run()
