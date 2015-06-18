@@ -145,7 +145,7 @@ def calculate_approximate_track_lengths():
                 s2l = s2.lower()
                 return s1l.startswith(s2l) or s2l.startswith(s1l)
 
-            for tr in client.find("title", track.encode("utf-8")):
+            for tr in client.search("title", track.encode("utf-8")):
                 if "artist" not in tr:
                     continue
                 if isinstance(tr["artist"], list):
