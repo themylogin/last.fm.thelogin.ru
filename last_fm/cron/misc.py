@@ -24,26 +24,32 @@ def calculate_approximate_track_lengths():
     new_tracks = 0
     new_tracks_success = 0
     cheaters_ids = [user.id for user in db.session.query(User).filter(User.cheater == True)]
-    for artist, track in db.session.query(
-        Scrobble.artist,
-        Scrobble.track
-    ).outerjoin(
-        (ApproximateTrackLength, (ApproximateTrackLength.artist == Scrobble.artist) & (ApproximateTrackLength.track == Scrobble.track))
-    ).filter(
-        ~Scrobble.user_id.in_(cheaters_ids),
-        ApproximateTrackLength.track == None,
-    ).group_by(
-        Scrobble.artist,
-        Scrobble.track
-    ):
+    for artist, track in db.session.query(Scrobble.artist, Scrobble.track).\
+                                    outerjoin((ApproximateTrackLength,
+                                                  ((ApproximateTrackLength.artist == Scrobble.artist) &
+                                                   (ApproximateTrackLength.track == Scrobble.track)))).\
+                                    filter(~Scrobble.user_id.in_(cheaters_ids),
+                                           ApproximateTrackLength.track == None).\
+                                    group_by(Scrobble.artist, Scrobble.track):
         new_tracks += 1
 
         lengths = defaultdict(lambda: 0)
         prev_tracks_lengths = defaultdict(lambda: defaultdict(lambda: 0))
         next_tracks_lengths = defaultdict(lambda: defaultdict(lambda: 0))
-        get_prev_scrobble = lambda scrobble: db.session.query(Scrobble).filter(Scrobble.user == scrobble.user, Scrobble.uts < scrobble.uts).order_by(Scrobble.uts.desc()).first()
-        get_next_scrobble = lambda scrobble: db.session.query(Scrobble).filter(Scrobble.user == scrobble.user, Scrobble.uts > scrobble.uts).order_by(Scrobble.uts.asc()).first()
-        for scrobble in db.session.query(Scrobble).filter(~Scrobble.user_id.in_(cheaters_ids), Scrobble.artist == artist, Scrobble.track == track):
+        get_prev_scrobble = lambda scrobble: db.session.query(Scrobble).\
+                                                        filter(Scrobble.user == scrobble.user,
+                                                               Scrobble.uts < scrobble.uts).\
+                                                        order_by(Scrobble.uts.desc()).\
+                                                        first()
+        get_next_scrobble = lambda scrobble: db.session.query(Scrobble).\
+                                                        filter(Scrobble.user == scrobble.user,
+                                                               Scrobble.uts > scrobble.uts).\
+                                                        order_by(Scrobble.uts.asc()).\
+                                                        first()
+        for scrobble in db.session.query(Scrobble).\
+                                   filter(~Scrobble.user_id.in_(cheaters_ids),
+                                          Scrobble.artist == artist,
+                                          Scrobble.track == track):
             prev_scrobble = get_prev_scrobble(scrobble)
             if prev_scrobble:
                 lengths[scrobble.uts - prev_scrobble.uts] += 1
@@ -63,7 +69,11 @@ def calculate_approximate_track_lengths():
                     next_tracks_lengths[next_scrobble.name][next_next_scrobble.uts - next_scrobble.uts] += 1
 
         if lengths:
-            get_top_track_lengths = lambda tracks_lengths: sorted(tracks_lengths.items(), key=lambda (track, lengths): -sum(lengths.values()))[0][1] if tracks_lengths else {}
+            get_top_track_lengths = lambda tracks_lengths: (sorted(tracks_lengths.items(),
+                                                                   key=lambda (track, lengths):
+                                                                           -sum(lengths.values()))[0][1]
+                                                            if tracks_lengths
+                                                            else {})
 
             def get_intervals(lengths):
                 intervals = {}
@@ -88,7 +98,8 @@ def calculate_approximate_track_lengths():
             intervals = filter(None, [prev_intervals, this_intervals, next_intervals])
             for combination_length in range(len(intervals), 1, -1):
                 for combination in itertools.combinations(intervals, combination_length):
-                    lengths_by_indexes = lambda combination, indexes: sum(map(lambda (interval, index): interval[index], zip(combination, indexes)), [])
+                    lengths_by_indexes = lambda combination, indexes: sum(map(lambda (interval, index): interval[index],
+                                                                              zip(combination, indexes)), [])
                     deviation = lambda lengths: sum([abs(length - (sum(lengths) / len(lengths))) for length in lengths])
                     def cmp(lengths1, lengths2):
                         if deviation(lengths1) < 10 and deviation(lengths2) > 10:
@@ -143,12 +154,14 @@ def calculate_approximate_track_lengths():
                     length = real_length
 
                     if abs(real_length - length) > 10:
-                        print "Length for %s - %s is %02d:%02d does not match real %02d:%02d" % (artist, track, length / 60, length % 60, real_length / 60, real_length % 60)
-                        print prev_intervals.keys()
-                        print this_intervals.keys()
-                        print next_intervals.keys()
+                        logger.debug("Length for %s - %s is %02d:%02d does not match real %02d:%02d", artist, track,
+                                     length / 60, length % 60, real_length / 60, real_length % 60)
+                        #print prev_intervals.keys()
+                        #print this_intervals.keys()
+                        #print next_intervals.keys()
                     else:
-                        print "Length for %s - %s is %02d:%02d matches real %02d:%02d" % (artist, track, length / 60, length % 60, real_length / 60, real_length % 60)
+                        logger.debug("Length for %s - %s is %02d:%02d matches real %02d:%02d", artist, track,
+                                     length / 60, length % 60, real_length / 60, real_length % 60)
                     break
 
 
