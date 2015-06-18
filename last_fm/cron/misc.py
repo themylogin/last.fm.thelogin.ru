@@ -2,6 +2,7 @@
 from __future__ import absolute_import, division, unicode_literals
 
 from collections import defaultdict, OrderedDict
+from datetime import datetime, timedelta
 import itertools
 import logging
 import mpd
@@ -21,8 +22,16 @@ def calculate_approximate_track_lengths():
     client = mpd.MPDClient()
     client.connect("192.168.0.4", 6600)
 
-    new_tracks = 0
-    new_tracks_success = 0
+    db.session.execute("""
+        DELETE FROM approximate_track_length
+        WHERE real_length IS NULL AND last_update < (
+            SELECT FROM_UNIXTIME(MAX(uts))
+            FROM scrobble
+            WHERE scrobble.artist = approximate_track_length.artist AND
+                  scrobble.track = approximate_track_length.track
+        )
+    """)
+
     cheaters_ids = [user.id for user in db.session.query(User).filter(User.cheater == True)]
     for artist, track in db.session.query(Scrobble.artist, Scrobble.track).\
                                     outerjoin((ApproximateTrackLength,
@@ -31,8 +40,6 @@ def calculate_approximate_track_lengths():
                                     filter(~Scrobble.user_id.in_(cheaters_ids),
                                            ApproximateTrackLength.track == None).\
                                     group_by(Scrobble.artist, Scrobble.track):
-        new_tracks += 1
-
         lengths = defaultdict(lambda: 0)
         prev_tracks_lengths = defaultdict(lambda: defaultdict(lambda: 0))
         next_tracks_lengths = defaultdict(lambda: defaultdict(lambda: 0))
@@ -164,22 +171,15 @@ def calculate_approximate_track_lengths():
                                      length / 60, length % 60, real_length / 60, real_length % 60)
                     break
 
-
-            if real_length or length < 900:
-                logger.debug("Length for %s - %s is %02d:%02d", artist, track, length / 60, length % 60)
-
-                db.session.execute(ApproximateTrackLength.__table__.insert().values(
-                    artist      = artist,
-                    track       = track,
-                    length      = length,
-                    stat_length = stat_length,
-                    real_length = real_length,
-                ))
-                db.session.commit()
-
-            new_tracks_success += 1
-
-    logger.info("Found %d new tracks, lengths for %d successfully inserted" % (new_tracks, new_tracks_success,))
+            db.session.execute(ApproximateTrackLength.__table__.insert().values(
+                artist      = artist,
+                track       = track,
+                length      = length,
+                stat_length = stat_length,
+                real_length = real_length,
+                last_update = datetime.now(),
+            ))
+            db.session.commit()
 
 
 @cron.job(day_of_month=1, hour=6, minute=0)

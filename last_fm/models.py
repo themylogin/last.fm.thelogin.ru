@@ -174,6 +174,7 @@ class ApproximateTrackLength(db.Model):
 
     stat_length     = db.Column(db.Integer)
     real_length     = db.Column(db.Integer)
+    last_update     = db.Column(db.DateTime)
 
 
 class Coincidence(db.Model):
