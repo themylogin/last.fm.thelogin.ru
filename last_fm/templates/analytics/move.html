@@ -5,13 +5,39 @@
 {% block container %}
     <h2>Куда лучше всего переехать {{ user.username }}</h2>
 
-    <table class="table table-striped table-bordered table-condensed fixed-header" id="prediction-table">
+    <table class="table table-striped table-bordered table-condensed">
         <thead>
             <th>Город</th>
             <th>Концерты</th>
         </thead>
         <tbody>
-            {% for city, artists in cities %}
+            {% for city, artists in cities_to_live %}
+                <tr>
+                    <td>{{ city }}</td>
+                    <td>
+                        {#
+                        <ul>
+                            {% for artist, events in artists %}
+                                <li>{{ artist }} ({{ events }})</li>
+                            {% endfor %}
+                        </ul>
+                        #}
+                        {{ artists|join(", ") }}
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <h2>Как лучше путешествовать</h2>
+
+    <table class="table table-striped table-bordered table-condensed">
+        <thead>
+            <th>Город</th>
+            <th>Концерты</th>
+        </thead>
+        <tbody>
+            {% for city, artists in cities_to_travel %}
                 <tr>
                     <td>{{ city }}</td>
                     <td>

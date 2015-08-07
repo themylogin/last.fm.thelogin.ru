@@ -792,7 +792,6 @@ def analytics_predict_charts():
 @cached_analytics_view
 def analytics_move():
     user = db.session.query(User).get(request.args.get("user", type=int))
-    weight = request.args.get("weight", type=int)
     
     cities = defaultdict(lambda: defaultdict(lambda: 0))
     artist2scrobbles = {ua.artist.name: ua.scrobbles
@@ -806,17 +805,25 @@ def analytics_move():
                         "Новосибирск": "Novosibirsk"}.get(event.city, event.city)
                 cities["%s, %s" % (city, event.country)][artist.name] += 1
 
-    """
-    cities = map(lambda (city, artists): (city, map(lambda (a, c): (a, "%d * %d" % (c, artist2scrobbles[a]) if weight else c),
-                                                    sorted(artists.iteritems(),
-                                                           key=lambda (a, c): -(c * artist2scrobbles[a]))[:10])),
-                 sorted(cities.iteritems(), key=lambda (city, artists): (
-                     -sum(map(lambda (artist, count): (artist2scrobbles[artist] if weight else 1) * count,
-                              artists.iteritems()))
-                 )))
-    """
-    cities = map(lambda (city, artists): (city, sorted(artists.iterkeys())),
-                 sorted(cities.iteritems(), key=lambda (city, artists): -len(artists)))
+    cities_to_live = map(lambda (city, artists): (city, sorted(artists.iterkeys())),
+                         sorted(cities.iteritems(), key=lambda (city, artists): -len(artists)))
+
+    cities_to_travel = []
+    cities_with_artists = [(city, set(artists)) for city, artists in cities_to_live]
+    while True:
+        for city, artists in cities_with_artists:
+            if artists:
+                cities_to_travel.append((city, sorted(artists)))
+
+                for artist in list(artists):
+                    for other_city, other_city_artists in cities_with_artists:
+                        other_city_artists.discard(artist)
+
+                break
+        else:
+            break
+    cities_to_travel = sorted(cities_to_travel, key=lambda (city, artists): -len(artists))
 
     return {"user": user,
-            "cities": cities}
+            "cities_to_live": cities_to_live,
+            "cities_to_travel": cities_to_travel}
