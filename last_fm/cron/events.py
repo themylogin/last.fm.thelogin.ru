@@ -61,9 +61,10 @@ def update_events():
                         db_artist.name = unicode(xml_artist)
                     db_event.artists.append(db_artist)
                 db.session.add(db_event)
-                db.session.commit()
 
             if found:
                 break
 
             page = page + 1
+
+        db.session.commit()
