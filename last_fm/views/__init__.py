@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, division, unicode_literals
 
-from datetime import datetime
+from datetime import datetime, timedelta
+from dateutil.relativedelta import relativedelta
 from flask.ext.login import current_user
 import os
 from pluralize import pluralize
@@ -29,6 +30,8 @@ def context_processor():
     context = {}
 
     context["now"] = datetime.now()
+    context["timedelta"] = timedelta
+    context["relativedelta"] = relativedelta
 
     if current_user.is_authenticated():
         context["current_user_has_gets"] = db.session.query(func.count(Get)).\

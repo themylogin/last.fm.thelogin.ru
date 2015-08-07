@@ -48,6 +48,30 @@ $(function(){
         $table.fixedHeaderTable({ footer: true, cloneHeadToFoot: true, fixedColumn: false, height: $(window).height() - $table.offset().top - 15 });
     });
 
+    $(".date-input input").each(function(){
+        $(this).datepicker({
+            changeYear: true,
+            changeMonth: true,
+            dateFormat: "dd.mm.yy"
+        });
+    });
+
+    $("#prediction-table td").on("click", function(){
+        flashOtherTable($("#real-table"), $(this));
+    });
+    $("#real-table td").on("click", function(){
+        flashOtherTable($("#prediction-table"), $(this));
+    });
+    function flashOtherTable($table, $td)
+    {
+        var $tr = $table.find("tr[rel='" + $td.parent().attr("rel") + "']");
+        if ($tr.length)
+        {
+            $table.parent().scrollTop($table.parent().scrollTop() + $tr.position().top);
+            $tr.stop().css("color", "#FF0000").animate({color: "#000000"}, 1500);
+        }
+    }
+
     /*        
     ##     ## #### ########    ########     ###    ########     ###    ########  ######## 
     ##     ##  ##     ##       ##     ##   ## ##   ##     ##   ## ##   ##     ## ##       

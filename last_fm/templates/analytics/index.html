@@ -25,6 +25,12 @@
     {{ text_input(name, title, value) }}
 {% endmacro %}
 
+{% macro date_input(name, title, value="") %}
+    <div class="date-input">
+        {{ text_input(name, title, value) }}
+    </div>
+{% endmacro %}
+
 {% macro select(name, title, values) %}
     <div class="form-group">
         {% if title %}
@@ -91,7 +97,7 @@
     {% call form("jump_to_date", "Перепрыгнуть к дате", "смотреть скробблы пользователя на last.fm", "Вспомнить былые времена") %}
         {{ select_user() }}
 
-        {{ text_input("date", "Дата") }}
+        {{ date_input("date", "Дата") }}
     {% endcall %}
 
     {% call form("recommendations", "Рекомендации", "какую музыку слушают друзья?", "Получить совет") %}
@@ -190,5 +196,17 @@
                                          ("scrobbles",        "Количеством скробблов"),
                                          ("total_scrobbles",  "Минимальным количеством скробблов за всё время")]) }}
         {{ integer_input("n", "Не ниже", 8) }}
+    {% endcall %}
+
+    {% call form("predict_charts", "А если бы", "ничего не менялось", "Предсказать будущее") %}
+        {{ select_user(title="У пользователя") }}
+        {{ date_input("target", "к", (now + relativedelta(years=1)).strftime("%d.%m.%Y")) }}
+        {{ date_input("from", "всё было как с", (now - relativedelta(years=1)).strftime("%d.%m.%Y")) }}
+        {{ date_input("to", "по", now.strftime("%d.%m.%Y")) }}
+    {% endcall %}
+
+    {% call form("move", "Пришло время переезжать в Москву", "все переехали, я хуже что ли?", "Однокомнатная квартира в Тёплом Стане") %}
+        {{ select_user(title="Кто хочет переехать") }}
+        {{ checkbox("weight", "Взвесить с количеством скробблов") }}
     {% endcall %}
 {% endblock %}

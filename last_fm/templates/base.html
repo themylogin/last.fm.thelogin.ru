@@ -54,12 +54,14 @@
 
 {% block scripts %}
     {{ super() }}
+    <script src="http://code.jquery.com/ui/1.11.3/jquery-ui.min.js"></script>
     <script src="{{ url_for('static', filename='jquery.fixedheadertable.min.js') }}"></script>
     <script src="{{ url_for('static', filename='main.js') }}"></script>
 {% endblock %}
 
 {% block styles %}
     {{ super() }}
+    <link href="http://code.jquery.com/ui/1.11.3/themes/smoothness/jquery-ui.css" rel="stylesheet">
     <link href="{{ url_for('static', filename='jquery.fixedheadertable.css') }}" rel="stylesheet">
     <link href="{{ url_for('static', filename='main.css') }}" rel="stylesheet">
 {% endblock %}

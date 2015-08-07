@@ -40,13 +40,20 @@ def cached_analytics_view(view):
     return decorated
 
 
-def get_user2artist2scrobbles(user_ids, min_scrobbles=0):
-    return {user_id: dict(db.session.query(Scrobble.artist, func.count(Scrobble.id)).\
-                                     group_by(Scrobble.artist).\
-                                     filter_by(user_id=user_id).\
-                                     having(func.count(Scrobble.id) >= (min_scrobbles(user_id)
-                                                                        if callable(min_scrobbles)
-                                                                        else min_scrobbles)))
+def get_artist2scrobbles(user_id, min_scrobbles=0, having=None, where=None):
+    having = having or []
+    where = where or []
+    return dict(db.session.query(Scrobble.artist, func.count(Scrobble.id)).\
+                           group_by(Scrobble.artist).\
+                           filter_by(user_id=user_id).\
+                           having(func.count(Scrobble.id) >= (min_scrobbles(user_id)
+                                                              if callable(min_scrobbles)
+                                                              else min_scrobbles), *having).\
+                           filter(*where))
+
+
+def get_user2artist2scrobbles(user_ids, *args, **kwargs):
+    return {user_id: get_artist2scrobbles(user_id, *args, **kwargs)
             for user_id in user_ids}
 
 
@@ -58,6 +65,10 @@ def get_user2artistlower2scrobbles(user2artist2scrobbles):
 
 def get_user2username():
     return dict(db.session.query(User.id, User.username).all())
+
+
+def uts_for_date(s):
+    return time.mktime(dateutil.parser.parse(s, dayfirst=True).timetuple())
 
 
 @app.route("/analytics")
@@ -181,7 +192,7 @@ def analytics_jump_to_date():
         "user"  : db.session.query(User).get(request.args["user"]).username,
         "page"  : math.ceil(db.session.query(func.count(Scrobble.id)).filter(
             Scrobble.user_id == request.args["user"],
-            Scrobble.uts > time.mktime(dateutil.parser.parse(request.args["date"], dayfirst=True).timetuple())
+            Scrobble.uts > uts_for_date(request.args["date"])
         ).scalar() / 50.0) + 1
     })
 
@@ -738,3 +749,74 @@ def analytics_weekly_hitparade():
                 top_time=top_time[:50],
                 longest_holds=longest_holds[:50],
                 disappearances=filter(lambda disappearance: disappearance["weeks"] >= 50, disappearances))
+
+
+@app.route("/analytics/predict_charts")
+@cached_analytics_view
+def analytics_predict_charts():
+    user = db.session.query(User).get(request.args.get("user", type=int))
+    target = uts_for_date(request.args["target"])
+    to = uts_for_date(request.args["to"])
+    from_ = max(db.session.query(func.min(Scrobble.uts)).filter(Scrobble.user == user).scalar(),
+                uts_for_date(request.args["from"]))
+
+    multiplier = (target - to) / (to - from_)
+    prediction = defaultdict(lambda: 0, get_artist2scrobbles(user.id, where=[Scrobble.uts <= to]))
+    for artist, scrobbles in get_artist2scrobbles(user.id, where=[Scrobble.uts >= from_,
+                                                                  Scrobble.uts <= to]).iteritems():
+        prediction[artist] += int(multiplier * scrobbles)
+    prediction_dict = prediction
+    prediction = sorted(prediction.iteritems(), key=lambda (artist, scrobbles): -scrobbles)[:500]
+
+    real = None
+    if target <= time.mktime(datetime.now().timetuple()):
+        real = get_artist2scrobbles(user.id, where=[Scrobble.uts <= target])
+        real = map(lambda (artist, scrobbles): (artist, scrobbles, ('<span style="color: #008000;">+%d%%</span>' %\
+                                                                        ((scrobbles / prediction_dict[artist] - 1) * 100)
+                                                                    if scrobbles > prediction_dict[artist]
+                                                                    else '<span style="color: #800000;">-%d%%</span>' %\
+                                                                        ((prediction_dict[artist] / scrobbles - 1) * 100))
+                                                                   if prediction_dict[artist]
+                                                                   else '<span style="color: #000080;">NEW</span>'),
+                          sorted(real.iteritems(), key=lambda (artist, scrobbles): -scrobbles)[:500])
+
+    return {"user": user,
+            "target": datetime.fromtimestamp(target),
+            "to": datetime.fromtimestamp(to),
+            "from_": datetime.fromtimestamp(from_),
+            "prediction": prediction,
+            "real": real}
+
+
+@app.route("/analytics/move")
+@cached_analytics_view
+def analytics_move():
+    user = db.session.query(User).get(request.args.get("user", type=int))
+    weight = request.args.get("weight", type=int)
+    
+    cities = defaultdict(lambda: defaultdict(lambda: 0))
+    artist2scrobbles = {ua.artist.name: ua.scrobbles
+                        for ua in db.session.query(UserArtist).\
+                                             filter(UserArtist.user == user)}
+    for event in db.session.query(Event):
+        for artist in event.artists:
+            if artist.name in artist2scrobbles:
+                city = {"Санкт-Петербург": "Saint Petersburg",
+                        "Москва": "Moscow",
+                        "Новосибирск": "Novosibirsk"}.get(event.city, event.city)
+                cities["%s, %s" % (city, event.country)][artist.name] += 1
+
+    """
+    cities = map(lambda (city, artists): (city, map(lambda (a, c): (a, "%d * %d" % (c, artist2scrobbles[a]) if weight else c),
+                                                    sorted(artists.iteritems(),
+                                                           key=lambda (a, c): -(c * artist2scrobbles[a]))[:10])),
+                 sorted(cities.iteritems(), key=lambda (city, artists): (
+                     -sum(map(lambda (artist, count): (artist2scrobbles[artist] if weight else 1) * count,
+                              artists.iteritems()))
+                 )))
+    """
+    cities = map(lambda (city, artists): (city, sorted(artists.iterkeys())),
+                 sorted(cities.iteritems(), key=lambda (city, artists): -len(artists)))
+
+    return {"user": user,
+            "cities": cities}

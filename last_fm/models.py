@@ -14,7 +14,8 @@ __all__ = [b"User", b"Scrobble", b"Artist", b"UserArtist",
            b"ApproximateTrackLength", b"Coincidence",
            b"GuestVisit",
            b"Repeat", b"Anniversary", b"Get",
-           b"DashboardData"]
+           b"DashboardData",
+           b"Event"]
 
 
 class User(db.Model, UserMixin):
@@ -240,3 +241,23 @@ class DashboardData(db.Model):
     key             = db.Column(db.String(length=255))
     value           = db.Column(MySqlPickleType(pickler=json))
     date            = db.Column(db.Date)
+
+###
+
+
+class Event(db.Model):
+    id              = db.Column(db.Integer, primary_key=True)
+    title           = db.Column(db.String(length=255))
+    datetime        = db.Column(db.DateTime)    
+    url             = db.Column(db.String(length=255))
+    city            = db.Column(db.String(length=255))
+    country         = db.Column(db.String(length=255))
+
+    artists         = db.relationship("Artist", secondary="event_artist",
+                                      backref=db.backref("events"))
+
+
+event_artist = db.Table("event_artist",
+    db.Column("event_id", db.Integer, db.ForeignKey("event.id")),
+    db.Column("artist_id", db.Integer, db.ForeignKey("artist.id"))
+)
