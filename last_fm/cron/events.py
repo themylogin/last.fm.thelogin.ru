@@ -21,8 +21,11 @@ logger = logging.getLogger(__name__)
 def update_events():
     artists = set([user_artist.artist.name
                    for user_artist in db.session.query(UserArtist).\
-                                                 filter(UserArtist.scrobbles >= 100)])
+                                                 filter(UserArtist.scrobbles >= 100,
+                                                        UserArtist.user_id.in_([6, 11]))])
     for artist in artists:
+        db_artist = db.session.query(Artist).filter(Artist.name == artist).one()
+
         page = 1
         pages = -1
         while pages == -1 or page <= pages:
@@ -43,24 +46,23 @@ def update_events():
                 if not hasattr(event, "venue"):
                     continue
 
-                if db.session.query(Event).get(int(event.id)) is not None:
-                    found = True
-                    break
-
-                db_event = Event()
-                db_event.id = int(event.id)
-                db_event.title = unicode(event.title)
-                db_event.datetime = dateutil.parser.parse(unicode(event.startDate))
-                db_event.url = unicode(event.url)
-                db_event.city = unicode(event.venue.location.city)
-                db_event.country = unicode(event.venue.location.country)
-                for xml_artist in event.artists.iter("artist"):
-                    db_artist = db.session.query(Artist).filter(Artist.name == unicode(xml_artist)).first()
-                    if db_artist is None:
-                        db_artist = Artist()
-                        db_artist.name = unicode(xml_artist)
+                db_event = db.session.query(Event).get(int(event.id))
+                if db_event:
+                    if db_artist in db_event.artists:
+                        found = True
+                        break
+                    else:
+                        db_event.artists.append(db_artist)
+                else:
+                    db_event = Event()
+                    db_event.id = int(event.id)
+                    db_event.title = unicode(event.title)
+                    db_event.datetime = dateutil.parser.parse(unicode(event.startDate))
+                    db_event.url = unicode(event.url)
+                    db_event.city = unicode(event.venue.location.city)
+                    db_event.country = unicode(event.venue.location.country)
                     db_event.artists.append(db_artist)
-                db.session.add(db_event)
+                    db.session.add(db_event)
 
             if found:
                 break
