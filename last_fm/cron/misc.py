@@ -145,31 +145,37 @@ def calculate_approximate_track_lengths():
                 s2l = s2.lower()
                 return s1l.startswith(s2l) or s2l.startswith(s1l)
 
-            for tr in client.search("title", track.encode("utf-8")):
-                if "artist" not in tr:
-                    continue
-                if isinstance(tr["artist"], list):
-                    tr["artist"] = tr["artist"][0]
+            try:
+                result = list(client.search("title", track.encode("utf-8")))
+            except mpd.MPDError:
+                logger.warning("MPD Error", exc_info=True)
+                client.connect("192.168.0.4", 6600)
+            else:
+                for tr in result:
+                    if "artist" not in tr:
+                        continue
+                    if isinstance(tr["artist"], list):
+                        tr["artist"] = tr["artist"][0]
 
-                if "title" not in tr:
-                    continue
-                if isinstance(tr["title"], list):
-                    tr["title"] = tr["title"][0]
+                    if "title" not in tr:
+                        continue
+                    if isinstance(tr["title"], list):
+                        tr["title"] = tr["title"][0]
 
-                if streq(artist, tr["artist"].decode("utf-8")) and streq(track, tr["title"].decode("utf-8")):
-                    real_length = int(tr["time"])
-                    length = real_length
+                    if streq(artist, tr["artist"].decode("utf-8")) and streq(track, tr["title"].decode("utf-8")):
+                        real_length = int(tr["time"])
+                        length = real_length
 
-                    if abs(real_length - length) > 10:
-                        logger.debug("Length for %s - %s is %02d:%02d does not match real %02d:%02d", artist, track,
-                                     length / 60, length % 60, real_length / 60, real_length % 60)
-                        #print prev_intervals.keys()
-                        #print this_intervals.keys()
-                        #print next_intervals.keys()
-                    else:
-                        logger.debug("Length for %s - %s is %02d:%02d matches real %02d:%02d", artist, track,
-                                     length / 60, length % 60, real_length / 60, real_length % 60)
-                    break
+                        if abs(real_length - length) > 10:
+                            logger.debug("Length for %s - %s is %02d:%02d does not match real %02d:%02d", artist, track,
+                                         length / 60, length % 60, real_length / 60, real_length % 60)
+                            #print prev_intervals.keys()
+                            #print this_intervals.keys()
+                            #print next_intervals.keys()
+                        else:
+                            logger.debug("Length for %s - %s is %02d:%02d matches real %02d:%02d", artist, track,
+                                         length / 60, length % 60, real_length / 60, real_length % 60)
+                        break
 
             db.session.execute(ApproximateTrackLength.__table__.insert().values(
                 artist      = artist,
