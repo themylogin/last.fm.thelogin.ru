@@ -20,6 +20,7 @@ logger = logging.getLogger(__name__)
 def check_new_repeats():
     for user in db.session.query(User).\
                            filter(User.download_scrobbles == True,
+                                  User.twitter_username != None,
                                   User.twitter_track_repeats == True):
         session = db.create_scoped_session()
 
@@ -109,7 +110,7 @@ def tweet_repeats():
             else:
                 break
 
-        if repeat.total > 0:
+        if repeat.total > 0 and repeat.user.twitter_username and repeat.user.twitter_track_repeats:
             session.commit()
             post_tweet(repeat.user, "Послушал на репите %s – %s %s" % (
                 repeat.artist,
