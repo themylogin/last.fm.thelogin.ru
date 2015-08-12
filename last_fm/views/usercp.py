@@ -7,7 +7,6 @@ from flask.ext.security import current_user, login_required
 from flask_wtf import Form
 import oauth2
 import re
-import twitter
 import urllib
 from urlparse import parse_qsl
 from wtforms import fields, validators
@@ -94,12 +93,15 @@ def twitter_init():
     oauth_consumer  = oauth2.Consumer(key=app.config["TWITTER_CONSUMER_KEY"], secret=app.config["TWITTER_CONSUMER_SECRET"])
     oauth_client    = oauth2.Client(oauth_consumer)
 
-    resp, content   = oauth_client.request(twitter.REQUEST_TOKEN_URL, "POST", body=urllib.urlencode({ "oauth_callback" : url_for("twitter_callback", _external=True) }))
+    resp, content   = oauth_client.request("https://api.twitter.com/oauth/request_token", "POST",
+                                           body=urllib.urlencode({"oauth_callback": url_for("twitter_callback",
+                                                                                            _external=True)}))
     if resp["status"] != "200":
         raise Exception("Unable to request token from Twitter: %s" % resp["status"])
     session["twitter_oauth_data"] = dict(parse_qsl(content))
     
-    return redirect(twitter.AUTHORIZATION_URL + "?oauth_token=" + session["twitter_oauth_data"]["oauth_token"])
+    return redirect("https://api.twitter.com/oauth/authorize?oauth_token=%s" %
+                    session["twitter_oauth_data"]["oauth_token"])
 
 
 @app.route("/usercp/twitter/callback")
@@ -110,7 +112,7 @@ def twitter_callback():
     oauth_consumer  = oauth2.Consumer(key=app.config["TWITTER_CONSUMER_KEY"], secret=app.config["TWITTER_CONSUMER_SECRET"])
     oauth_client    = oauth2.Client(oauth_consumer, oauth_token)
 
-    resp, content   = oauth_client.request(twitter.ACCESS_TOKEN_URL, "POST")
+    resp, content   = oauth_client.request("https://api.twitter.com/oauth/access_token", "POST")
     oauth_data      = dict(parse_qsl(content))
 
     current_user.twitter_oauth_token        = oauth_data["oauth_token"]
