@@ -55,9 +55,6 @@ def usercp():
 
         use_twitter_data            = fields.BooleanField(label="Использовать данные Twitter-аккаунта (@%s) для приветствия в умном доме" % current_user.twitter_username)
 
-        artist_expires_years        = fields.IntegerField(label="Сколько лет нужно не слушать исполнителя, чтобы оставить его в прошлом",
-                                                          validators=[validators.NumberRange(min=1, message="Не меньше 1!")])
-
         twitter_track_repeats       = fields.BooleanField(label="Постить репиты в твиттер")
         twitter_repeats_min_count   = fields.IntegerField(label="Минимальное количество скробблов (от 5)", validators=[StopIfUnchecked("twitter_track_repeats"),
                                                                                                                        validators.NumberRange(min=5, message="Не меньше 5!")])

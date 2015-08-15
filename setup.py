@@ -24,6 +24,7 @@ setup(
         "Flask-Script",
         "Flask-Security",
         "Flask-SQLAlchemy",
+        "Flask-Testing",
         "Flask-WTF",
         "gevent",
         "gunicorn",

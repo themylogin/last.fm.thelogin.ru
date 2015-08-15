@@ -37,8 +37,6 @@ class User(db.Model, UserMixin):
     cheater                     = db.Column(db.Boolean, index=True, default=False)
     hates_me                    = db.Column(db.Boolean, index=True, default=False)
 
-    artist_expires_years        = db.Column(db.Integer, default=5)
-
     twitter_username            = db.Column(db.String(32))
     twitter_data                = db.Column(db.PickleType(pickler=json))
     twitter_data_updated        = db.Column(db.DateTime)
@@ -215,6 +213,7 @@ class Anniversary(db.Model):
     user_id         = db.Column(db.Integer, db.ForeignKey("user.id"))
     artist_id       = db.Column(db.Integer, db.ForeignKey("artist.id"))
     anniversary     = db.Column(db.Integer)
+    positive        = db.Column(db.Boolean)
 
     user            = db.relationship("User", foreign_keys=[user_id])
     artist          = db.relationship("Artist", foreign_keys=[artist_id])
