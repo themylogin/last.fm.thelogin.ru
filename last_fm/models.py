@@ -71,9 +71,6 @@ class Scrobble(db.Model):
     track           = db.Column(db.String(255), index=True)
     uts             = db.Column(db.Integer, index=True)
 
-    u_ar            = db.Index(user_id, artist)
-    u_ar_u          = db.Index(user_id, artist, uts)
-
     @property
     def datetime(self):
         return datetime.fromtimestamp(self.uts)
@@ -90,8 +87,10 @@ class Scrobble(db.Model):
             return None
 
     user                        = db.relationship("User", foreign_keys=[user_id])
-    approximate_track_length    = db.relationship("ApproximateTrackLength", primaryjoin="(ApproximateTrackLength.artist == Scrobble.artist) & (ApproximateTrackLength.track == Scrobble.track)",
-                                                                            foreign_keys=[artist, track])
+    approximate_track_length    = db.relationship("ApproximateTrackLength",
+                                                  primaryjoin="(ApproximateTrackLength.artist == Scrobble.artist) & "
+                                                              "(ApproximateTrackLength.track == Scrobble.track)",
+                                                  foreign_keys=[artist, track])
 
 
 class Artist(db.Model):
@@ -155,7 +154,7 @@ class UserRelease(db.Model):
 class UserArtistIgnore(db.Model):
     id      = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"))
-    artist  = db.Column(db.String(255), index=True)
+    artist  = db.Column(db.String(255))
 
     user    = db.relationship("User", foreign_keys=[user_id])
 
@@ -175,7 +174,7 @@ class ApproximateTrackLength(db.Model):
 
     stat_length     = db.Column(db.Integer)
     real_length     = db.Column(db.Integer)
-    last_update     = db.Column(db.DateTime)
+    last_update     = db.Column(db.DateTime, index=True)
 
 
 class Coincidence(db.Model):
