@@ -21,8 +21,10 @@ import last_fm.views.index
 import last_fm.views.login
 import last_fm.views.misc
 import last_fm.views.usercp
-ImageServer(app, os.path.join(app.static_folder, "artists"), allow_internet=True)
-ImageServer(app, os.path.join(app.static_folder, "covers"), allow_internet=True)
+ImageServer(app, os.path.join(app.static_folder, "artists"), allow_internet=True,
+            redis_lock=[{"host": "localhost", "port": 6379, "db": 0}])
+ImageServer(app, os.path.join(app.static_folder, "covers"), allow_internet=True,
+            redis_lock=[{"host": "localhost", "port": 6379, "db": 0}])
 
 
 @app.context_processor
