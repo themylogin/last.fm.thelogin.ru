@@ -16,7 +16,7 @@ from last_fm.utils.network import *
 
 @app.route("/login")
 def login():
-    return redirect("%(homepage)s/api/auth/?api_key=%(api)s&cb=%(callback_url)s" % {
+    return redirect("%(homepage)s/api/auth?api_key=%(api)s&cb=%(callback_url)s" % {
         "homepage"      : network.homepage,
         "api"           : app.config["LAST_FM_API_KEY"],
         "callback_url"  : urlencode(url_for("login_callback", next=request.args.get("next"), _external=True)),
