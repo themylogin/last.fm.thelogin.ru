@@ -14,7 +14,13 @@ from last_fm.utils import normalize_mac_address
 version_key = "last.fm:guests_api:guests_version"
 version_pubsub_key = "last.fm:guests_api:guests_version_pubsub"
 
-Redis().incr(version_key)
+while True:
+    try:
+        Redis().incr(version_key)
+    except Exception:
+        pass
+    else:
+        break
 
 __all__ = [b"Users", b"UserByDevice", b"Guests", b"ManageGuests"]
 
