@@ -127,3 +127,29 @@ class ChartChangeTweetTestCase(unittest.TestCase):
                                              "Crystal Castles"]),
                          "У меня Access to Arasaka обогнали God Is An Astronaut и Mogwai, а "
                          "Mogwai обогнали God Is An Astronaut!")
+
+    def test_both_overtake_and_eviction(self):
+        self.assertEqual(chart_change_tweet(['Access to Arasaka',
+                                             'Sonic Youth',
+                                             'Crystal Castles',
+                                             'Skytree',
+                                             'Gridlock'],
+                                            ['Access to Arasaka',
+                                             'Sonic Youth',
+                                             'Crystal Castles',
+                                             'Gridlock',
+                                             'A Place to Bury Strangers']),
+                         "У меня Gridlock обогнали Skytree, а A Place to Bury Strangers вытеснили Skytree!")
+
+    def test_simultaneous_eviction_and_overtake(self):
+        self.assertEqual(chart_change_tweet(['Access to Arasaka',
+                                             'Sonic Youth',
+                                             'Crystal Castles',
+                                             'Gridlock',
+                                             'A Place to Bury Strangers'],
+                                            ['Access to Arasaka',
+                                             'Sonic Youth',
+                                             'Crystal Castles',
+                                             'Skytree',
+                                             'Gridlock']),
+                         "А у меня Skytree вытеснили A Place to Bury Strangers, обогнав Gridlock!")

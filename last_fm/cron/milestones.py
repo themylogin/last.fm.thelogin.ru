@@ -155,8 +155,6 @@ def chart_change_tweet(old, new):
 
     evictors = [n for n in new if n not in old]
     evicted = [o for o in old if o not in new]
-    if evictors and evicted:
-        happened.append("%s вытеснили %s" % (join_list(evictors), join_list(evicted)))
 
     old_copy = list(old)
     new_copy = list(new)
@@ -165,9 +163,14 @@ def chart_change_tweet(old, new):
         for i, overtaker in enumerate(new_copy):
             if overtaker in old_copy:
                 if i < old_copy.index(overtaker):
-                    overtaken = [o for o in old_copy
-                                 if (old_copy.index(overtaker) > old_copy.index(o) and
-                                     new_copy.index(overtaker) < new_copy.index(o))]
+                    overtaken = []
+                    for o in old_copy:
+                        if o in new_copy:
+                            if (old_copy.index(overtaker) > old_copy.index(o) and
+                                    new_copy.index(overtaker) < new_copy.index(o)):
+                                overtaken.append(o)
+                        else:
+                            overtaken.extend(evicted)
                     overtakers.append(([overtaker], overtaken))
                     old_copy.remove(overtaker)
                     new_copy.remove(overtaker)
@@ -191,6 +194,14 @@ def chart_change_tweet(old, new):
             break
     for overtaker, overtaken in overtakers:
         happened.append("%s обогнали %s" % (join_list(overtaker), join_list(overtaken)))
+
+    if evictors and evicted:
+        eviction = "%s вытеснили %s" % (join_list(evictors), join_list(evicted))
+        first_evicted_position = old.index(evicted[0])
+        last_evictor_position = new.index(evictors[-1])
+        if last_evictor_position < first_evicted_position:
+            eviction += ", обогнав %s" % join_list(new[last_evictor_position + 1:])
+        happened.append(eviction)
 
     if happened:
         return "%s %s!" % ("У меня" if len(happened) > 1 else "А у меня", join_list(happened, ", ", ", а "))
