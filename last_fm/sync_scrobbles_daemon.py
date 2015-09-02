@@ -76,7 +76,7 @@ def update_scrobbles(user, asap=False):
 
             if not asap:
                 total_xml_scrobbles = count_xml_scrobbles(user, to=last_scrobble_uts + 1)
-                if total_xml_scrobbles < total_db_scrobbles - 10 and False:
+                if total_xml_scrobbles < total_db_scrobbles - 10:
                     logger.warning("User %s scrobble count decreased (%d -> %d), possible remote database corruption. "
                                    "Not removing", user.username, total_db_scrobbles, total_xml_scrobbles)
                 elif total_xml_scrobbles != total_db_scrobbles:
