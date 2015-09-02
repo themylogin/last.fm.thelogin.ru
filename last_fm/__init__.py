@@ -3,6 +3,7 @@ from __future__ import absolute_import, division, unicode_literals
 
 from flask.ext.bootstrap import Bootstrap
 from raven.contrib.flask import Sentry
+import socket
 import sys
 from werkzeug.exceptions import HTTPException
 
@@ -15,6 +16,8 @@ from last_fm.celery import celery
 from last_fm.db import db
 from last_fm.login_manager import login_manager
 from last_fm.models import *
+
+socket.setdefaulttimeout(10)
 
 Bootstrap(app)
 login_manager.init_app(app)

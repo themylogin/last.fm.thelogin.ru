@@ -8,7 +8,6 @@ import HTMLParser
 import logging
 from lxml import objectify
 import re
-import socket
 from sqlalchemy.sql import func
 import urllib
 import urllib2
@@ -30,7 +29,6 @@ comparable_str = lambda s: re.sub(not_w, "", s.lower())
 
 @cron.job(minute="*/15")
 def update_releases():
-    socket.setdefaulttimeout(10)
     title_comparables = set()
     for feed in db.session.query(ReleaseFeed):
         try:
@@ -45,7 +43,7 @@ def update_releases():
                     db.session.add(release)
                     title_comparables.add(release.title_comparable)
         except:
-            logging.exception("Error downloading feed %s", feed.url)
+            logger.exception("Error downloading feed %s", feed.url)
 
     db.session.commit()
 
