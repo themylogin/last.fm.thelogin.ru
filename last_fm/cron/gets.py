@@ -3,6 +3,7 @@ from __future__ import absolute_import, division, unicode_literals
 
 from bs4 import BeautifulSoup
 import logging
+import re
 import requests
 from sqlalchemy.sql import func
 
@@ -35,14 +36,15 @@ def tweet_gets():
                 try:
                     update_scrobbles_for_user(user)
                     update_scrobbles_for_user(user)
-                    user_plays_count = int("".join([x.text
-                                                    for x in BeautifulSoup(
-                                                        requests.get(
-                                                            "http://www.lastfm.ru/user/%s" % user.username
-                                                        ).text
-                                                    ).\
-                                                    find("span", class_="userPlays").\
-                                                    find("span", class_="count")]))
+                    user_plays_count = int(re.sub("[^0-9]", "",
+                                                  BeautifulSoup(
+                                                      requests.get(
+                                                          "http://www.last.fm/ru/user/%s" % user.username
+                                                      ).text
+                                                  ).\
+                                                  find("div", "header-metadata-global-stats").\
+                                                  find("td", "metadata-display").\
+                                                  text))
                 except:
                     logger.error("Synchronizing error", exc_info=True)
                 else:
