@@ -170,7 +170,9 @@ def chart_change_tweet(old, new):
                                     new_copy.index(overtaker) < new_copy.index(o)):
                                 overtaken.append(o)
                         else:
-                            overtaken.extend(evicted)
+                            for e in evicted:
+                                if e not in overtaken:
+                                    overtaken.append(e)
                     overtakers.append(([overtaker], overtaken))
                     old_copy.remove(overtaker)
                     new_copy.remove(overtaker)

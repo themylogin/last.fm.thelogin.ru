@@ -153,3 +153,19 @@ class ChartChangeTweetTestCase(unittest.TestCase):
                                              'Skytree',
                                              'Gridlock']),
                          "А у меня Skytree вытеснили A Place to Bury Strangers, обогнав Gridlock!")
+
+    def test_overtake_and_multiple_eviction(self):
+        self.assertEqual(chart_change_tweet(['Access to Arasaka',
+                                             'Sonic Youth',
+                                             'Crystal Castles',
+                                             'Skytree1',
+                                             'Skytree2',
+                                             'Gridlock'],
+                                            ['Access to Arasaka',
+                                             'Sonic Youth',
+                                             'Crystal Castles',
+                                             'Gridlock',
+                                             'A Place to Bury Strangers1',
+                                             'A Place to Bury Strangers2']),
+                         "У меня Gridlock обогнали Skytree1 и Skytree2, а A Place to Bury Strangers1 и "
+                         "A Place to Bury Strangers2 вытеснили Skytree1 и Skytree2!")
