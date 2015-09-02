@@ -42,7 +42,7 @@ def update_releases():
                     release.date = datetime.now()
                     db.session.add(release)
                     title_comparables.add(release.title_comparable)
-        except:
+        except Exception:
             logger.debug("Error downloading feed %s", feed.url, exc_info=True)
 
     db.session.commit()
@@ -79,7 +79,7 @@ def find_releases(feed):
         release.title = post["title"]
         try:
             release.content = u"".join([c["value"] for c in post["content"]])
-        except:
+        except Exception:
             release.content = post["summary"]
         yield release
 

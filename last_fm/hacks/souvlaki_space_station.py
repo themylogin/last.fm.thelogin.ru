@@ -26,7 +26,7 @@ if app.config.get("GUESTS_DEVICES_RESOLVER"):
                     except urllib2.HTTPError as e:
                         if e.code != 404:
                             raise
-                    except:
+                    except Exception:
                         logging.exception("Exception while communicating with guests device resolver")
 
                     if device:

@@ -127,7 +127,7 @@ def update_scrobbles(user, asap=False):
                 got_track = True
                 try:
                     date = int(track.date.get("uts"))
-                except:
+                except Exception:
                     now_playing = {"artist": unicode(track.artist),
                                    "album": unicode(track.album),
                                    "track": unicode(track.name)}
@@ -166,7 +166,7 @@ def update_scrobbles(user, asap=False):
             for track in xml.recenttracks.iter("track"):
                 try:
                     track.date.get("uts")
-                except:
+                except Exception:
                     now_playing = {"artist": unicode(track.artist),
                                    "album": unicode(track.album),
                                    "track": unicode(track.name)}

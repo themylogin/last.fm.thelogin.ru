@@ -31,7 +31,7 @@ def get_release_html(release):
         return tostring(fromstring(release.content), pretty_print=True, encoding="utf-8").decode("utf-8").\
                                                                                           replace("<html>", "").\
                                                                                           replace("</html>", "")
-    except:
+    except Exception:
         return release.content
 
 

@@ -92,7 +92,7 @@ class Guests(Resource):
         if range_header:
             try:
                 client_version = int(range_header.split("-")[0])
-            except:
+            except Exception:
                 abort(400)
 
             redis = Redis()

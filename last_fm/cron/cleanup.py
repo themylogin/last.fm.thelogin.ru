@@ -30,7 +30,7 @@ def revoke_twitter_tokens():
                     user.use_twitter_data = False
                 else:
                     raise
-        except:
+        except Exception:
             logger.debug("Exception while verifying credentials", exc_info=True)
 
     db.session.commit()

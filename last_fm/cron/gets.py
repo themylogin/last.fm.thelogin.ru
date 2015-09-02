@@ -45,7 +45,7 @@ def tweet_gets():
                                                   find("div", "header-metadata-global-stats").\
                                                   find("td", "metadata-display").\
                                                   text))
-                except:
+                except Exception:
                     logger.error("Synchronizing error", exc_info=True)
                 else:
                     session2 = db.create_scoped_session()
@@ -61,7 +61,7 @@ def tweet_gets():
                                             filter(Scrobble.user == user2).\
                                             order_by(Scrobble.uts)\
                                             [get - 1 - (user_plays_count - db_scrobbles)]
-                    except:
+                    except Exception:
                         logger.warning("There is no get yet", exc_info=True)
                     else:
                         g = Get()

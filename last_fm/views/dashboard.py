@@ -105,7 +105,7 @@ def dashboard_artist_stats():
                                                                  filter(Artist.name == artist,
                                                                         UserArtist.user == user).\
                                                                  one()
-    except:
+    except Exception:
         first_scrobble_uts = db.session.query(func.min(Scrobble.uts)).\
                                         filter(Scrobble.user == user,
                                                Scrobble.artist == artist).\
