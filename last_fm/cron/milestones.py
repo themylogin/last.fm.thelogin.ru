@@ -6,14 +6,13 @@ import itertools
 import logging
 from sqlalchemy.sql import func
 import twitter
-import urllib2
 
 from twitter_overkill.utils import join_list
 
 from last_fm.celery import cron
 from last_fm.db import db
 from last_fm.models import *
-from last_fm.utils.model import get_artist_id
+from last_fm.utils.model import update_scrobbles_for_user, get_artist_id
 from last_fm.utils.twitter import get_api_for_user, post_tweet
 
 logger = logging.getLogger(__name__)
@@ -45,7 +44,7 @@ def tweet_milestones():
     users = set(list(artist_milestones_users) + list(artist_races_users))
 
     for user in users:
-        urllib2.urlopen("http://127.0.0.1:46400/update_scrobbles/%s" % user.username).read()
+        update_scrobbles_for_user(user)
 
     # common
     user2artist2scrobbles = {}
