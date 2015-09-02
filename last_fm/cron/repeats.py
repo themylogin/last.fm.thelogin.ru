@@ -27,7 +27,7 @@ def check_new_repeats():
         try:
             update_scrobbles_for_user(user)
         except Exception as e:
-            logger.exception("Failed to update_scrobbles for %s", user.username)
+            logger.debug("Failed to update_scrobbles for %s", user.username, exc_info=True)
             continue
 
         last_scrobble = session.query(Scrobble).\
@@ -90,7 +90,7 @@ def tweet_repeats():
         try:
             update_scrobbles_for_user(repeat.user)
         except Exception as e:
-            logger.exception("Failed to update_scrobbles for %s", repeat.user.username)
+            logger.debug("Failed to update_scrobbles for %s", repeat.user.username, exc_info=True)
             continue
 
         is_this_track = lambda scrobble: scrobble.artist == repeat.artist and scrobble.track == repeat.track

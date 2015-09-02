@@ -190,13 +190,13 @@ def main_loop():
         try:
             users = db.create_scoped_session().query(User).filter(User.download_scrobbles == True).all()
         except Exception as e:
-            logger.exception("Failed to query users")
+            logger.debug("Failed to query users", exc_info=True)
 
         for user in users:
             try:
                 update_scrobbles(user)
             except Exception as e:
-                logger.exception("Failed to update scrobbles for %s", user.username)
+                logger.debug("Failed to update scrobbles for %s", user.username, exc_info=True)
 
         update_finished_at = time.time()
 
@@ -220,7 +220,7 @@ def web_update_scrobbles(username):
     try:
         return Response(json.dumps(update_scrobbles(user, asap=True)), headers={b"Content-type": b"application/json"})
     except Exception:
-        logger.exception("Failed to update scrobbles on user request")
+        logger.debug("Failed to update scrobbles on user request", exc_info=True)
         abort(500)
 
 

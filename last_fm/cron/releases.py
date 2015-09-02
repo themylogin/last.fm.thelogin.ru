@@ -43,7 +43,7 @@ def update_releases():
                     db.session.add(release)
                     title_comparables.add(release.title_comparable)
         except:
-            logger.exception("Error downloading feed %s", feed.url)
+            logger.debug("Error downloading feed %s", feed.url, exc_info=True)
 
     db.session.commit()
 
