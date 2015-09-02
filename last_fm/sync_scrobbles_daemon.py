@@ -72,11 +72,11 @@ def update_scrobbles(user, asap=False):
 
         delete_after = None
         if total_db_scrobbles > 0:
-            download_from = last_scrobble_uts
+            download_from = last_scrobble_uts + 1
 
             if not asap:
                 total_xml_scrobbles = count_xml_scrobbles(user, to=last_scrobble_uts + 1)
-                if total_xml_scrobbles < total_db_scrobbles - 10:
+                if total_xml_scrobbles < total_db_scrobbles - 10 and False:
                     logger.warning("User %s scrobble count decreased (%d -> %d), possible remote database corruption. "
                                    "Not removing", user.username, total_db_scrobbles, total_xml_scrobbles)
                 elif total_xml_scrobbles != total_db_scrobbles:
@@ -85,6 +85,7 @@ def update_scrobbles(user, asap=False):
 
                     left = first_scrobble_uts
                     right = last_scrobble_uts
+                    was_okay_at = 0
                     while abs(left - right) > 86400:
                         middle = left + (right - left) / 2
 
@@ -98,12 +99,13 @@ def update_scrobbles(user, asap=False):
                             logger.debug("User %s was okay before %s (scrobbles = %d)",
                                          user.username, format_uts(middle), db_scrobbles)
                             left = middle
+                            was_okay_at = middle
                         else:
                             logger.debug("User %s was not okay before %s (db_scrobbles = %d, xml_scrobbles = %d)",
                                          user.username, format_uts(middle), db_scrobbles, xml_scrobbles)
                             right = middle
 
-                    delete_after = min(left, right)
+                    delete_after = min(left, right, was_okay_at)
                     download_from = delete_after
         else:
             download_from = 0
@@ -138,7 +140,7 @@ def update_scrobbles(user, asap=False):
 
             page = page + 1
 
-        if delete_after:
+        if delete_after is not None:
             count = session.query(Scrobble).\
                             filter(Scrobble.user == user,
                                    Scrobble.uts >= delete_after).\
