@@ -47,6 +47,7 @@ def tweet_gets():
                                                   text))
                 except Exception:
                     logger.error("Synchronizing error", exc_info=True)
+                    break
                 else:
                     session2 = db.create_scoped_session()
                     user2 = session2.query(User).get(user.id)
@@ -63,6 +64,7 @@ def tweet_gets():
                                             [get - 1 - (user_plays_count - db_scrobbles)]
                     except Exception:
                         logger.warning("There is no get yet", exc_info=True)
+                        break
                     else:
                         g = Get()
                         g.user = user2
