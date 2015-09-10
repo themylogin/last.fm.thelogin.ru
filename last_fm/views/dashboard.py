@@ -12,7 +12,9 @@ import math
 import pylast
 import requests
 from sqlalchemy.sql import func
+import sys
 import time
+import urllib
 
 from themyutils.datetime import russian_strftime
 from themyutils.itertools import with_prev
@@ -63,33 +65,33 @@ def dashboard():
 @dashboard_cache("artist")
 @login_required
 def dashboard_artist(artist):
-    network = get_network()
-    artist = network.get_artist(artist)
-    url = artist.get_url(pylast.DOMAIN_RUSSIAN)
-    artist_page = BeautifulSoup(requests.get(url).text)
+    url = "http://www.last.fm/ru/music/%s" % urllib.quote_plus(artist, "").replace("%2B", "%252B")
     artist_wiki = BeautifulSoup(requests.get(url + "/+wiki").text)
+    artist_comments = BeautifulSoup(requests.get(url + "/comments").text)
 
-    page = 1
-    pages = 1
+    hash = None
     images = []
-    while page <= pages:
-        artist_images = BeautifulSoup(requests.get(url + "/+images?page=%d" % page).text)
+    for i in xrange(sys.maxint):
+        artist_images = BeautifulSoup(requests.get(url + "/+images" + (("/" + hash) if hash is not None else "")).text)
 
-        images += [img["src"].replace("126s", "_") for img in artist_images.select("#pictures img")]
+        new_images = [src
+                      for src in [img["src"].replace("60x60", "ar0")
+                                  for img in artist_images.select("ul.gallery-thumbnails img")]
+                      if src not in images]
+        if new_images:
+            images += new_images
+            hash = images[-1].split("/")[-1]
+            logger.debug("Downloaded %d images for %s, going for %s", len(images), artist, hash)
+        else:
+            break
 
-        nav = filter(lambda a: "btn--icon-only" not in a["class"], artist_images.select(".whittle-pagination a"))
-        if nav:
-            pages = int(nav[-1].text.strip())
-
-        page += 1
-
-    return {"wiki": "".join(map(unicode, artist_wiki.select("#wiki")[0].contents)),
+    return {"wiki": "".join(map(unicode, artist_wiki.select(".wiki-content")[0].contents)),
             "images": images,
-            "shouts": [{"username": shout.select(".author")[0].text.strip(),
-                        "avatar": shout.select(".author img")[0]["src"],
-                        "contents": "".join(sum([map(unicode, p.contents) for p in shout.select("p")], [])),
-                        "date": shout.select(".date")[0].text.strip()}
-                       for shout in artist_page.select(".artist-shoutbox li.message")]}
+            "shouts": [{"username": shout.select(".text-container .username")[0].text.strip(),
+                        "avatar": shout.select("img.avatar")[0]["src"],
+                        "contents": unicode(shout.select(".comment-text")[0].text.strip()),
+                        "date": shout.select(".timestamp")[0].text.strip()}
+                       for shout in artist_comments.select("li.comment-container")]}
 
 
 @app.route("/dashboard/artist/stats")
