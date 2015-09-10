@@ -11,28 +11,30 @@
         {% endfor %}
     </ul>
 
-    <div class="last_fm_2008">
-        <div style="margin: 15px auto; text-align: center; width: 300px; font-weight: bold;">
-            <div class="last_fm_2008-quote">
-                <div style="font-size: 20px;">
-                    Last.FM Milestones
-                </div>
-                {% for get in gets %}
-                    <div class="last_fm_2008-quote">
-                        {{ get.get }}th track: ({{ get.datetime.strftime("%d %b %Y") }})<br />
-                        <a href="http://last.fm/music/{{ get.artist|urlencode }}">{{ get.artist }}</a> -
-                        <a href="http://last.fm/music/{{ get.artist|urlencode }}/_/{{ get.track|urlencode }}">
-                            <img src="/static/sprite.png" style="vertical-align: middle; width: 16px; height: 16px;" />
-                            {{ get.track }}
-                        </a>
-                        <img src="/static/covers/252/{{ get.artist_image.replace('://', '/') }}" style="display: block; margin: 0 auto;" />
-                    </div>
-                {% endfor %}
+    {% if gets %}
+        <div class="last_fm_2008">
+            <div style="margin: 15px auto; text-align: center; width: 300px; font-weight: bold;">
                 <div class="last_fm_2008-quote">
-                    <div style="color: navy;">Generated on {{ gets[-1].datetime.strftime("%d %b %Y") }}</div>
-                    <div style="color: navy;">Get yours <a href="http://kastuvas.us.to/lastfm/?id=th&amp;ref=themylogin" rel="nofollow">here</a></div>
+                    <div style="font-size: 20px;">
+                        Last.FM Milestones
+                    </div>
+                    {% for get in gets %}
+                        <div class="last_fm_2008-quote">
+                            {{ get.get }}th track: ({{ get.datetime.strftime("%d %b %Y") }})<br />
+                            <a href="http://last.fm/music/{{ get.artist|urlencode }}">{{ get.artist }}</a> -
+                            <a href="http://last.fm/music/{{ get.artist|urlencode }}/_/{{ get.track|urlencode }}">
+                                <img src="/static/sprite.png" style="vertical-align: middle; width: 16px; height: 16px;" />
+                                {{ get.track }}
+                            </a>
+                            <img src="/static/covers/252/{{ get.artist_image.replace('://', '/') }}" style="display: block; margin: 0 auto;" />
+                        </div>
+                    {% endfor %}
+                    <div class="last_fm_2008-quote">
+                        <div style="color: navy;">Generated on {{ gets[-1].datetime.strftime("%d %b %Y") }}</div>
+                        <div style="color: navy;">Get yours <a href="http://kastuvas.us.to/lastfm/?id=th&amp;ref=themylogin" rel="nofollow">here</a></div>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
+    {% endif %}
 {% endblock %}
