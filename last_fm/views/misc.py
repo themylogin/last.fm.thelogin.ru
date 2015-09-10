@@ -63,5 +63,6 @@ def gets():
                            bbcode=bbcode,
                            users=db.session.query(User).\
                                             filter(User.download_scrobbles == True,
+                                                   User.twitter_username != None,
                                                    User.twitter_track_gets == True).\
                                             order_by(User.username))
