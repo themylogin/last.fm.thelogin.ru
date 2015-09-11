@@ -94,9 +94,9 @@ def dashboard_artist(artist):
                        for shout in artist_comments.select("li.comment-container")]}
 
 
-@app.route("/dashboard/artist/stats")
+@app.route("/dashboard/stats")
 @login_required
-def dashboard_artist_stats():
+def dashboard_stats():
     artist = request.args["artist"]
     user = current_user
 
@@ -148,12 +148,12 @@ def dashboard_artist_stats():
                                  scalar()
     next_get = int(math.ceil(total_scrobbles / 10000) * 10000)
     scrobbles_till_next_get = next_get - total_scrobbles
-    next_get_info = "Темпами этой недели, %s GET будет %s, этого месяца — %s" % (
+    next_get_info = "Темпами этой недели, <b>%s</b> GET будет <b>%s</b>, этого месяца — <b>%s</b>" % (
         "{0:,}".format(next_get).replace(",", " "),
         russian_strftime(datetime.now() + timedelta(days=scrobbles_till_next_get / scrobbles_per_day_last_week),
-                         "%d %B %Y"),
+                         "%d %B %Y").replace(datetime.now().strftime(" %Y"), ""),
         russian_strftime(datetime.now() + timedelta(days=scrobbles_till_next_get / scrobbles_per_day_last_month),
-                         "%d %B %Y"),
+                         "%d %B %Y").replace(datetime.now().strftime(" %Y"), ""),
     )
 
     scrobbles_per_day_last_week = _user_scrobbling_tempo(7, user, artist)
@@ -166,14 +166,14 @@ def dashboard_artist_stats():
     next_get = next(itertools.dropwhile(lambda get: total_scrobbles > get,
                                               itertools.chain([666], itertools.count(1000, 1000))))
     scrobbles_till_next_get = next_get - total_scrobbles
-    next_artist_get_info = "Темпами этой недели, %s GET будет %s, этого месяца — %s, полугодия — %s" % (
+    next_artist_get_info = "Темпами этой недели, <b>%s</b> GET будет <b>%s</b>, этого месяца — <b>%s</b>, полугодия — <b>%s</b>" % (
         "{0:,}".format(next_get).replace(",", " "),
         russian_strftime(datetime.now() + timedelta(days=scrobbles_till_next_get / scrobbles_per_day_last_week),
-                         "%d %B %Y"),
+                         "%d %B %Y").replace(datetime.now().strftime(" %Y"), ""),
         russian_strftime(datetime.now() + timedelta(days=scrobbles_till_next_get / scrobbles_per_day_last_month),
-                         "%d %B %Y"),
+                         "%d %B %Y").replace(datetime.now().strftime(" %Y"), ""),
         russian_strftime(datetime.now() + timedelta(days=scrobbles_till_next_get / scrobbles_per_day_last_half_year),
-                         "%d %B %Y"),
+                         "%d %B %Y").replace(datetime.now().strftime(" %Y"), ""),
     )
     next_artist_get_info_interesting = any(d < timedelta(days=365)
                                            for d in [timedelta(days=scrobbles_till_next_get / scrobbles_per_day_last_week),
@@ -223,20 +223,20 @@ def dashboard_artist_stats():
 
             if winning_tempo >= my_tempo:
                 if i == 0:
-                    winning_line += "не догоните %s никогда" % _closest_winning_enemy.username
+                    winning_line += "не догоните <b>%s</b> <b>никогда</b>" % _closest_winning_enemy.username
                 else:
-                    winning_line += "не догоните никогда"
+                    winning_line += "не догоните <b>никогда</b>"
                 prev_winning_was_never = True
             else:
                 if i == 0:
-                    winning_line += "догоните %s " % (_closest_winning_enemy.username)
+                    winning_line += "догоните <b>%s</b> " % (_closest_winning_enemy.username)
                 else:
                     if prev_winning_was_never:
                         winning_line += "догоните "
 
                 winning_line += russian_strftime(datetime.now() + timedelta(
                     days=(closest_winning_enemy_scrobbles - my_scrobbles) / (my_tempo - winning_tempo)),
-                                                 "%d %B %Y")
+                                                 "<b>%d %B %Y</b>").replace(datetime.now().strftime(" %Y"), "")
 
         if closest_losing_enemy:
             losing_tempo = _user_scrobbling_tempo(days, _closest_losing_enemy, artist)
@@ -250,13 +250,13 @@ def dashboard_artist_stats():
 
             if my_tempo >= losing_tempo:
                 if i == 0:
-                    losing_line += "%s не догонит вас никогда" % _closest_losing_enemy.username
+                    losing_line += "<b>%s</b> не догонит вас <b>никогда</b>" % _closest_losing_enemy.username
                 else:
-                    losing_line += "не догонит никогда"
+                    losing_line += "не догонит <b>никогда</b>"
                 prev_winning_was_never = True
             else:
                 if i == 0:
-                    losing_line += "%s догонит вас " % _closest_losing_enemy.username
+                    losing_line += "<b>%s</b> догонит вас " % _closest_losing_enemy.username
                 else:
                     if prev_winning_was_never:
                         losing_line += "догонит "
@@ -264,7 +264,7 @@ def dashboard_artist_stats():
 
                 losing_line += russian_strftime(datetime.now() + timedelta(
                     days=(my_scrobbles - closest_losing_enemy_scrobbles) / (losing_tempo - my_tempo)),
-                                                 "%d %B %Y")
+                                                 "<b>%d %B %Y</b>").replace(datetime.now().strftime(" %Y"), "")
 
 
     return jsonify({k: v

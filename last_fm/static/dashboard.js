@@ -6,20 +6,39 @@ $(function(){
 
     var $container = $("#container");
 
-    var socket = io("ws://192.168.0.1:6671/");
-    socket.emit("notify");
-    socket.on("notify", function(current){
-        if (current.success && current.success.state == "play")
-        {
-            $.get("http://console.thelogin.ru/mpd/current", function(current){
-                showMusic(current.song.artist, current.song.album, current.song.title, current.song.file);
-            });
-        }
-        else
-        {
-            showNoMusic();
-        }
-    });
+    function runIdleLoop()
+    {
+        $.ajax({
+            url: "http://console.thelogin.ru/mpd/idle"
+        }).done(function(){
+            getStatus();
+        }).fail(function(){
+            setTimeout(runIdleLoop, 5000);
+        });
+    }
+    function getStatus()
+    {
+        $.ajax({
+            url: "http://console.thelogin.ru/mpd/status"
+        }).done(function(status){
+            if (status.state == "play")
+            {
+                $.ajax({
+                    url: "http://console.thelogin.ru/mpd/current"
+                }).done(function(current){
+                    showMusic(current.song.artist, current.song.album, current.song.title, current.song.file);
+                }).always(runIdleLoop);
+            }
+            else
+            {
+                showNoMusic();
+                runIdleLoop();
+            }
+        }).fail(function(){
+            setTimeout(getStatus, 5000);
+        });
+    }
+    getStatus();
 
     // showMusic("Velvet Acid Christ", "", "Fun With Drugs", "Rave/Industrial/Velvet Acid Christ/1999 - Fun With Razors/Fun With Knives/05 - Fun With Drugs.flac");
     // showMusic("Velvet Acid Christ", "", "Decypher", "Rave/Industrial/Velvet Acid Christ/1999 - Fun With Razors/Fun With Knives/01 - Decypher.flac");
@@ -46,7 +65,7 @@ $(function(){
         if (artistChanged)
         {
             artistWikiDeferred = $.Deferred();
-            $.ajax("/dashboard/artist", {"data": {"artist": artist}}).done(function(artist_data){
+            $.ajax("/dashboard/artist", {"data": {"artist": artist}}).retry({times: Number.MAX_VALUE}).done(function(artist_data){
                 var $oldCol1 = $(".col-1");
                 var $newCol1 = $("<div/>").addClass("col-1").hide().html(col1Template).appendTo($container);
                 var $artistSlider = $newCol1.find(".artist-slider");
@@ -66,22 +85,8 @@ $(function(){
         if (artistChanged || trackChanged)
         {
             lyricsDeferred = $.Deferred();
-            $.ajax("http://player.thelogin.ru/lyrics", {"data": {"artist": artist, "title": track}}).done(function(lyrics){
+            $.ajax("http://player.thelogin.ru/lyrics", {"data": {"artist": artist, "title": track}}).retry({times: Number.MAX_VALUE}).done(function(lyrics){
                 lyricsDeferred.resolve({"lyrics": lyrics.replace(/\n/g, "<br />")});
-            });
-        }
-
-        if (pathChanged)
-        {
-            currentPath = path;
-
-            var $oldCol3 = $(".col-3");
-            var $newCol3 = $("<div/>").addClass("col-3").hide().html(col3Template).appendTo($container);
-            $newCol3.find(".album-cover").attr("src", "http://last.fm.thelogin.ru/static/covers/pad/%23191919/640/640/http/player.thelogin.ru/cover_for_file?path=" + encodeURIComponent(path));
-
-            $newCol3.fadeIn(500);
-            $oldCol3.fadeOut(500, function(){
-                $oldCol3.remove();
             });
         }
 
@@ -117,7 +122,7 @@ $(function(){
                 function calculateProportionalHeights(heights)
                 {
                     var wikiHeight = minWikiHeight;
-                    var lyricsHeight = totalHeight - 2 * headerHeight - wikiHeight;
+                    var lyricsHeight = totalHeight - headerHeight - wikiHeight - (data["lyrics"] ? headerHeight : 0);
                     if (heights["lyrics"] < lyricsHeight)
                     {
                         wikiHeight += lyricsHeight - heights["lyrics"];
@@ -133,10 +138,21 @@ $(function(){
                     };
                 }
 
+                function scaleArtistSlider()
+                {
+                    var $artistSlider = $(".col-1 .artist-slider");
+                    var index = $artistSlider.data("$JssorSlider$").$CurrentIndex();
+                    setupArtistSlider($artistSlider, $artistSlider.data("images"), index);
+                }
+
                 calculateHeights("", function(heights){
                     if (heights["lyrics"] <= totalHeight - 2 * headerHeight - minWikiHeight)
                     {
+                        $container.removeClass("col-2-2");
+
                         setup$col2(artist, track, data, calculateProportionalHeights(heights));
+
+                        scaleArtistSlider();
                     }
                     else
                     {
@@ -195,11 +211,37 @@ $(function(){
                                 }
                             }
 
-                            var $artistSlider = $(".col-1 .artist-slider");
-                            var index = $artistSlider.data("$JssorSlider$").$CurrentIndex();
-                            setupArtistSlider($artistSlider, $artistSlider.data("images"), index);
+                            scaleArtistSlider();
                         });
                     }
+                });
+            });
+
+            $.ajax("/dashboard/stats", {"data": {"artist": artist}}).retry({times: Number.MAX_VALUE}).done(function(stats){
+                var $oldCol3 = $(".col-3");
+                var $newCol3 = $("<div/>").addClass("col-3").hide().html(col3Template).appendTo($container);
+
+                $newCol3.find(".album-cover").attr("src", "http://last.fm.thelogin.ru/static/covers/pad/%23191919/640/640/" +
+                                                          "http/player.thelogin.ru/cover_for_file?path=" + encodeURIComponent(path));
+
+                var $facts = $newCol3.find(".facts");
+                if (stats.next_artist_get_info_interesting)
+                {
+                    $facts.append($("<li/>").html(stats.next_artist_get_info));
+                }
+                if (stats.winning_line)
+                {
+                    $facts.append($("<li/>").html(stats.winning_line));
+                }
+                if (stats.losing_line_interesting)
+                {
+                    $facts.append($("<li/>").html(stats.losing_line));
+                }
+                $facts.append($("<li/>").html(stats.next_get_info));
+
+                $newCol3.fadeIn(500);
+                $oldCol3.fadeOut(500, function(){
+                    $oldCol3.remove();
                 });
             });
         }
@@ -217,7 +259,7 @@ $(function(){
         var $slides = $artistSlider.find(".slides");
         $.each(images, function(i, url){
             $slides.append($("<div/>").append($("<img/>").attr("u", "image").attr("src", url.replace("http:/", "/static/artists/http")))
-                                      .append($("<img/>").attr("u", "thumb").attr("src", url.replace("http:/", "/static/artists/min-size/77/http"))));
+                                      .append($("<img/>").attr("u", "thumb").attr("src", url.replace("http:/", "/static/artists/crop/77/77/http"))));
         });
 
         $artistSlider.find(">div").attr("id", "artist-slider");
@@ -265,14 +307,33 @@ $(function(){
         $col2.find(".artist-title").text(artist);
         $col2.find(".artist-wiki-wrap").css("height", heights["wiki"]);
         $col2.find(".artist-wiki").html(data["wiki"]);
-        scrollArtistWiki(heights["wiki"], $col2.find(".artist-wiki"));
+
+        function scrollArtistWikiOrDont(immediately){
+            var $artistWiki = $col2.find(".artist-wiki");
+
+            if (localStorage.scrollArtistWiki == "true")
+            {
+                scrollArtistWiki(heights["wiki"], $artistWiki, immediately);
+            }
+            else
+            {
+                clearTimeout($artistWiki.data("scrollStart"));
+                $artistWiki.stop().animate({ top: 0 }, 200, "swing");
+            }
+        }
+        scrollArtistWikiOrDont(false);
+        $col2.find(".artist-wiki").on("dblclick", function(event){
+            localStorage.scrollArtistWiki = JSON.stringify(!JSON.parse(localStorage.scrollArtistWiki || "false"));
+            scrollArtistWikiOrDont(true);
+            event.preventDefault();
+        });
 
         setup$colLyrics($col2, artist, track, data, heights)
 
         return $col2;
     }
 
-    function scrollArtistWiki(height, $artistWiki)
+    function scrollArtistWiki(height, $artistWiki, immediately)
     {
         setTimeout(function(){
             if ($artistWiki.height() > height)
@@ -285,16 +346,26 @@ $(function(){
                 animate2 = function(){
                     $artistWiki.animate({ top: 0 }, pixels / 4, "swing", animate1);
                 };
-                setTimeout(animate1, 5000);
+                if (immediately)
+                {
+                    animate1();
+                }
+                else
+                {
+                    $artistWiki.data("scrollStart", setTimeout(animate1, 5000));
+                }
             }
         }, 0);
     }
 
     function setup$colLyrics($col, artist, track, data, heights)
     {
-        $col.find(".track-title").text(track);
-        $col.find(".track-lyrics-wrap").css("height", heights["lyrics"]);
-        $col.find(".track-lyrics").html(data["lyrics"]);
+        if (data["lyrics"])
+        {
+            $col.find(".track-title").text(track);
+            $col.find(".track-lyrics-wrap").css("height", heights["lyrics"]);
+            $col.find(".track-lyrics").html(data["lyrics"]);
+        }
     }
 
     function shuffle(array)
@@ -319,7 +390,11 @@ $(function(){
 
     function showNoMusic()
     {
-        $.ajax("/dashboard/no_music").done(function(data){
+        currentArtist = null;
+        currentTrack = null;
+        currentPath = null;
+
+        $.ajax("/dashboard/no_music").retry({times: Number.MAX_VALUE}).done(function(data){
             $(".col-1, .col-2, .col-2-2, .col-3").remove();
 
             var occupied = [[false, false, false, false], [false, false, false, false]];
