@@ -44,7 +44,10 @@ def tweet_milestones():
     users = set(list(artist_milestones_users) + list(artist_races_users))
 
     for user in users:
-        update_scrobbles_for_user(user)
+        try:
+            update_scrobbles_for_user(user)
+        except Exception:
+            return
 
     # common
     user2artist2scrobbles = {}
