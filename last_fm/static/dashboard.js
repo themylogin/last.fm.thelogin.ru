@@ -217,7 +217,7 @@ $(function(){
                 });
             });
 
-            $.ajax("/dashboard/stats", {"data": {"artist": artist}}).retry({times: Number.MAX_VALUE}).done(function(stats){
+            $.ajax("/dashboard/stats", {"data": {"artist": artist, "track": track}}).retry({times: Number.MAX_VALUE}).done(function(stats){
                 var $oldCol3 = $(".col-3");
                 var $newCol3 = $("<div/>").addClass("col-3").hide().html(col3Template).appendTo($container);
 
@@ -225,6 +225,10 @@ $(function(){
                                                           "http/player.thelogin.ru/cover_for_file?path=" + encodeURIComponent(path));
 
                 var $facts = $newCol3.find(".facts");
+                if (stats.users_track)
+                {
+                    $facts.append($("<li/>").html(stats.users_track));
+                }
                 if (stats.next_artist_get_info_interesting)
                 {
                     $facts.append($("<li/>").html(stats.next_artist_get_info));

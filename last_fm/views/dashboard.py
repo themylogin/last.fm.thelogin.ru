@@ -19,6 +19,7 @@ import urllib
 from themyutils.datetime import russian_strftime
 from themyutils.itertools import with_prev
 from themyutils.sqlalchemy import entity_to_dict
+from twitter_overkill.utils import join_list
 
 from last_fm.app import app
 from last_fm.db import db
@@ -98,6 +99,7 @@ def dashboard_artist(artist):
 @login_required
 def dashboard_stats():
     artist = request.args["artist"]
+    track = request.args["track"]
     user = current_user
 
     try:
@@ -266,6 +268,34 @@ def dashboard_stats():
                     days=(my_scrobbles - closest_losing_enemy_scrobbles) / (losing_tempo - my_tempo)),
                                                  "<b>%d %B %Y</b>").replace(datetime.now().strftime(" %Y"), "")
 
+    users_who_know_this_track = []
+    users_who_dont_know_this_track = []
+    for (u,) in db.session.query(Scrobble.user_id).\
+                           group_by(Scrobble.user_id).\
+                           filter(Scrobble.artist == artist,
+                                  ~Scrobble.user_id.in_([11])).\
+                           having(func.count(Scrobble.id) > 100):
+        _u = db.session.query(User).get(u)
+        if db.session.query(func.count(Scrobble.id)).filter(Scrobble.user == _u,
+                                                            Scrobble.artist == artist,
+                                                            Scrobble.track == track).scalar() > 0:
+            users_who_know_this_track.append("<b>" + _u.username + "</b>")
+        else:
+            users_who_dont_know_this_track.append("<b>" + _u.username + "</b>")
+    users_track = ""
+    if len(users_who_know_this_track) > 0:
+        users_track += "%s %s %s" % (join_list(users_who_know_this_track),
+                                     "слышали" if len(users_who_know_this_track) > 1 else "слышал",
+                                     track)
+        if len(users_who_dont_know_this_track) > 0:
+            users_track += ", а вот "
+    if len(users_who_dont_know_this_track) > 0:
+        if len(users_who_know_this_track) > 0:
+            users_track += "%s — нет" % (join_list(users_who_dont_know_this_track))
+        else:
+            users_track += "%s %s %s" % (join_list(users_who_dont_know_this_track),
+                                         "не слышали" if len(users_who_dont_know_this_track) > 1 else "не слышал",
+                                         track)
 
     return jsonify({k: v
                     for k, v in locals().iteritems()
