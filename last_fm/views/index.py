@@ -28,9 +28,12 @@ def get_ignored_artists_for(user):
 
 def get_release_html(release):
     try:
-        return tostring(fromstring(release.content), pretty_print=True, encoding="utf-8").decode("utf-8").\
-                                                                                          replace("<html>", "").\
-                                                                                          replace("</html>", "")
+        tree = fromstring(release.content)
+        for img in tree.xpath("//img"):
+            img.attrib["src"] = "http://last.fm.thelogin.ru/static/covers/%s" % img.attrib["src"].replace("://", "/")
+        return tostring(tree, pretty_print=True, encoding="utf-8").decode("utf-8").\
+                                                                   replace("<html>", "").\
+                                                                   replace("</html>", "")
     except Exception:
         return release.content
 

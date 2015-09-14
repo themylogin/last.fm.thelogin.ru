@@ -69,7 +69,7 @@ def find_releases(feed):
                 release.title += " (%s)" % group.get("releaseType")
             release.content = ""
             if group.get("cover"):
-                release.content += '<img src="http://last.fm.thelogin.ru/static/covers/%s"/ >' % group["cover"].replace("://", "/")
+                release.content += group["cover"]
             yield release
         return
 
