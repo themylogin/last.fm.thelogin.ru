@@ -12,7 +12,7 @@ from twitter_overkill.utils import join_list
 from last_fm.celery import cron
 from last_fm.db import db
 from last_fm.models import *
-from last_fm.utils.model import update_scrobbles_for_user, get_artist_id
+from last_fm.utils.model import update_scrobbles_for_user, get_artist
 from last_fm.utils.twitter import get_api_for_user, post_tweet
 
 logger = logging.getLogger(__name__)
@@ -55,7 +55,7 @@ def tweet_milestones():
         user2artist2scrobbles[user] = {}
         user2artist2scrobbles[user]["now"] = defaultdict(lambda: 0,
                                                          map(lambda (artist, scrobbles):
-                                                                 (get_artist_id(session, artist), scrobbles),
+                                                                 (get_artist(session, artist).id, scrobbles),
                                                              session.query(Scrobble.artist, func.count(Scrobble.id)).\
                                                                      group_by(Scrobble.artist).\
                                                                      filter(Scrobble.user == user).\

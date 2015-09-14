@@ -7,15 +7,17 @@ import urllib2
 from last_fm.db import db
 from last_fm.models import *
 
+__all__ = [b"get_artist", b"get_user_artists", b"update_scrobbles_for_user"]
 
-def get_artist_id(session, artist_name):
+
+def get_artist(session, artist_name):
     artist = session.query(Artist).filter(Artist.name == artist_name).first()
     if artist is None:
         artist = Artist()
         artist.name = artist_name
         session.add(artist)
         session.commit()
-    return artist.id
+    return artist
 
 
 def get_user_artists(user, min_scrobbles=0):

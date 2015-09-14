@@ -24,7 +24,7 @@ from twitter_overkill.utils import join_list
 from last_fm.app import app
 from last_fm.db import db
 from last_fm.models import *
-from last_fm.utils.network import get_network
+from last_fm.utils.model import get_artist
 
 logger = logging.getLogger(__name__)
 
@@ -66,6 +66,8 @@ def dashboard():
 @dashboard_cache("artist")
 @login_required
 def dashboard_artist(artist):
+    db_artist = get_artist(db.session, artist)
+
     url = "http://www.last.fm/ru/music/%s" % urllib.quote_plus(artist, "").replace("%2B", "%252B")
     artist_wiki = BeautifulSoup(requests.get(url + "/+wiki").text)
     artist_comments = BeautifulSoup(requests.get(url + "/comments").text)
@@ -80,14 +82,29 @@ def dashboard_artist(artist):
                                   for img in artist_images.select("ul.gallery-thumbnails img")]
                       if src not in images]
         if new_images:
+            db_new_images = [url
+                             for (url,) in db.session.query(ArtistImage.url).\
+                                                      filter(ArtistImage.artist == db_artist,
+                                                             ArtistImage.url.in_(new_images))]
+            really_new_images = set(new_images) - set(db_new_images)
+            if really_new_images:
+                for image in really_new_images:
+                    db_image = ArtistImage()
+                    db_image.artist = db_artist
+                    db_image.url = image
+                    db.session.add(db_image)
+            else:
+                break
             images += new_images
-            hash = images[-1].split("/")[-1]
+            hash = new_images[-1].split("/")[-1]
             logger.debug("Downloaded %d images for %s, going for %s", len(images), artist, hash)
         else:
             break
+    db.session.commit()
 
     return {"wiki": "".join(map(unicode, artist_wiki.select(".wiki-content")[0].contents)),
-            "images": images,
+            "images": [url for (url,) in db.session.query(ArtistImage.url).\
+                                                    filter(ArtistImage.artist == db_artist)],
             "shouts": [{"username": shout.select(".text-container .username")[0].text.strip(),
                         "avatar": shout.select("img.avatar")[0]["src"],
                         "contents": unicode(shout.select(".comment-text")[0].text.strip()),

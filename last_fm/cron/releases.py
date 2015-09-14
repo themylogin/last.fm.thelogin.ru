@@ -19,7 +19,7 @@ from last_fm.app import app
 from last_fm.celery import cron
 from last_fm.db import db
 from last_fm.models import *
-from last_fm.utils.model import get_artist_id, get_user_artists
+from last_fm.utils.model import get_artist, get_user_artists
 
 logger = logging.getLogger(__name__)
 
@@ -122,7 +122,7 @@ def update_user_artists():
             for artist in xml.artists.iter("artist"):
                 user_artist = UserArtist()
                 user_artist.user = user
-                user_artist.artist_id = get_artist_id(artist_session, unicode(artist.name))
+                user_artist.artist_id = get_artist(artist_session, unicode(artist.name)).id
                 user_artist.scrobbles = int(artist.playcount)
                 session.add(user_artist)
 

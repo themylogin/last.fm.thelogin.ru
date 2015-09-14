@@ -9,7 +9,7 @@ from themyutils.sqlalchemy.types import MySqlPickleType
 
 from last_fm.db import db
 
-__all__ = [b"User", b"Scrobble", b"Artist", b"UserArtist",
+__all__ = [b"User", b"Scrobble", b"Artist", b"ArtistImage", b"UserArtist",
            b"ReleaseFeed", b"Release", b"UserRelease", b"UserArtistIgnore",
            b"ApproximateTrackLength", b"Coincidence",
            b"GuestVisit",
@@ -94,6 +94,16 @@ class Scrobble(db.Model):
 class Artist(db.Model):
     id                  = db.Column(db.Integer, primary_key=True)
     name                = db.Column(db.String(255), nullable=False, unique=True)
+
+
+class ArtistImage(db.Model):
+    id                  = db.Column(db.Integer, primary_key=True)
+    artist_id           = db.Column(db.Integer, db.ForeignKey("artist.id"))
+    url                 = db.Column(db.String(255), nullable=False)
+
+    artist              = db.relationship("Artist", foreign_keys=[artist_id])
+
+    __table_args__      = (db.UniqueConstraint('artist_id', 'url', name='ix_artist_id_url'),)
 
 
 class UserArtist(db.Model):
