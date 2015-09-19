@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block title_part %}Прослушивание одних и тех же треков в одно и то же время - Статистика{% endblock %}
+
+{% block container %}
+    <h2>{{ user.username }}</h2>
+        
+    {% for artist, track, period, dates in tops %}
+        <div>
+            <h6>{{ artist }} — {{ track }} ({{ period }}): {{ dates|count }}</h6>
+            <div class="well">
+                <ul>
+                    {% for date in dates %}
+                        <li>{{ date }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    {% endfor %}
+{% endblock %}

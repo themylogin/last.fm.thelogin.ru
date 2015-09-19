@@ -827,3 +827,44 @@ def analytics_move():
     return {"user": user,
             "cities_to_live": cities_to_live,
             "cities_to_travel": cities_to_travel}
+
+
+@app.route("/analytics/scrobble_time")
+@cached_analytics_view
+def analytics_scrobble_time():
+    user = db.session.query(User).get(request.args.get("user", type=int))
+    day_parts = request.args.get("day_parts", type=int)
+    day_segment_length = int(86400 / day_parts)
+
+    times = defaultdict(lambda: defaultdict(set))
+    for scrobble in db.session.query(Scrobble).filter(Scrobble.user == user).order_by(Scrobble.uts):
+        timestamp = (scrobble.datetime.hour * 3600 +
+                     scrobble.datetime.minute * 60 +
+                     scrobble.datetime.second)
+        for offset in range(day_segment_length // 300):
+            t = (int((timestamp + offset * 300) / day_segment_length) * day_segment_length, offset * 300)
+            k = (scrobble.artist, scrobble.track)
+            times[t][k].add(scrobble.datetime.date())
+
+    tops = []
+    tops_set = set()
+    for (t, k, v) in sorted(sum(map(lambda (time_period, d): [(time_period, k, v) for k, v in d.items()],
+                                times.items()), []),
+                            key=lambda (t, k, v): -len(v)):
+        if len(tops) == 100:
+            break
+
+        if k in tops_set:
+            continue
+
+        tops.append((
+            k[0],
+            k[1],
+            ("%02d:%02d — %02d:%02d" % (int(sum(t) / 3600), int(sum(t) / 60) % 60,
+                                        int((sum(t) + day_segment_length) / 3600), int((sum(t) + day_segment_length) / 60) % 60)),
+            [d.strftime("%d.%m.%Y") for d in sorted(v)]
+        ))
+        tops_set.add(k)
+
+    return {"user": user,
+            "tops": tops}
