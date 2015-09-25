@@ -71,7 +71,7 @@ $(function(){
                 var $artistSlider = $newCol1.find(".artist-slider");
 
                 shuffle(artist_data.images);
-                setupArtistSlider($artistSlider, artist_data.images);
+                setupArtistSlider($artistSlider, artist_data.images.slice(0, 200));
 
                 $newCol1.fadeIn(500);
                 $oldCol1.fadeOut(500, function(){

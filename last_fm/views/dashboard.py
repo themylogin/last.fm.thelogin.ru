@@ -102,7 +102,8 @@ def dashboard_artist(artist):
             break
     db.session.commit()
 
-    return {"wiki": "".join(map(unicode, artist_wiki.select(".wiki-content")[0].contents)),
+    return {"wiki": "".join(map(unicode, artist_wiki.select(".wiki-content")[0].contents))
+                    if artist_wiki.select(".wiki-content") else "",
             "images": [url for (url,) in db.session.query(ArtistImage.url).\
                                                     filter(ArtistImage.artist == db_artist)],
             "shouts": [{"username": shout.select(".text-container .username")[0].text.strip(),

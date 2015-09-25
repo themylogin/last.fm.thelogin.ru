@@ -100,7 +100,7 @@ body
 .col-2-2 .col-2-2 { position: absolute; top: 0; left: 980px; width: 400px; height: 1060px; }
 .col-2-2 .col-3 { left: 1400px; width: 520px; }
 
-.artist-title, .track-title { font-size: 36px; font-family: "Times New Roman"; margin: 13px 0; }
+.artist-title, .track-title { font-size: 36px; font-family: "Times New Roman"; margin: 13px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 .artist-wiki-wrap { position: relative; overflow: hidden; }
 .artist-wiki { position: absolute; top: 0; }
