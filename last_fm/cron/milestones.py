@@ -136,7 +136,7 @@ def tweet_milestones():
                     loser = twitter2user[loser_twitter]
                     for artist_id in user2artist2scrobbles[winner]["now"]:
                         if user2artist2scrobbles[loser]["then"][artist_id] >= winner.twitter_artist_races_min_count and\
-                           user2artist2scrobbles[winner]["then"][artist_id] <= user2artist2scrobbles[loser]["then"][artist_id] and\
+                           user2artist2scrobbles[winner]["then"][artist_id] < user2artist2scrobbles[loser]["then"][artist_id] and\
                            user2artist2scrobbles[winner]["now"][artist_id] > user2artist2scrobbles[loser]["now"][artist_id]:
                             artist = get_artist_name(artist_id)
                             post_tweet(winner, "Я обогнал @%s по количеству прослушиваний %s!" % (

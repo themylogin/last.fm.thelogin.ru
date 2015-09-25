@@ -1,9 +1,73 @@
 # -*- coding=utf-8 -*-
 from __future__ import absolute_import, division, unicode_literals
 
+from datetime import datetime, timedelta
+from mock import Mock, patch
+import time
 import unittest
 
-from last_fm.cron.milestones import chart_change_tweet
+from themyutils.flask.testing import FlaskIntegrationTestCase
+
+from last_fm import app
+from last_fm.cron.milestones import tweet_milestones, chart_change_tweet
+from last_fm.db import db
+from last_fm.models import User, Scrobble
+
+
+class ArtistRaceTweetTestCase(FlaskIntegrationTestCase(app, db)):
+    @patch("last_fm.cron.milestones.post_tweet")
+    @patch("last_fm.cron.milestones.update_scrobbles_for_user")
+    @patch("last_fm.cron.milestones.get_api_for_user")
+    def test_equal_scrobble_count_and_one_moves_forward(self, get_api_for_user, update_scrobbles_for_user, post_tweet):
+        get_api_for_user.return_value = Mock(GetFriendIDs=Mock(return_value=[1, 2]))
+
+        themylogin = User()
+        themylogin.download_scrobbles = True
+        themylogin.twitter_username = "themylogin"
+        themylogin.twitter_data = {"id": 1}
+        themylogin.twitter_artist_races_min_count = 250
+        themylogin.twitter_win_artist_races = True
+        themylogin.twitter_lose_artist_races = True
+        db.session.add(themylogin)
+
+        mutantcornholio = User()
+        mutantcornholio.download_scrobbles = True
+        mutantcornholio.twitter_username = "mutantcornholio"
+        mutantcornholio.twitter_data = {"id": 2}
+        mutantcornholio.twitter_artist_races_min_count = 250
+        mutantcornholio.twitter_win_artist_races = True
+        mutantcornholio.twitter_lose_artist_races = True
+        db.session.add(mutantcornholio)
+
+        for i in range(404):
+            s = Scrobble()
+            s.user = themylogin
+            s.artist = "Burial"
+            s.track = "Track #%d" % i
+            s.uts = time.mktime((datetime(2009, 1, 1, 0, 0, 0) + timedelta(days=i)).timetuple())
+            db.session.add(s)
+        for i in range(404):
+            s = Scrobble()
+            s.user = mutantcornholio
+            s.artist = "Burial"
+            s.track = "Track #%d" % i
+            s.uts = time.mktime((datetime(2012, 1, 1, 0, 0, 0) + timedelta(days=i)).timetuple())
+            db.session.add(s)
+        db.session.commit()
+
+        tweet_milestones()
+        self.assertFalse(post_tweet.called)
+
+        s = Scrobble()
+        s.user = themylogin
+        s.artist = "Burial"
+        s.track = "Lambeth"
+        s.uts = time.mktime((datetime(2015, 9, 25, 22, 00, 00)).timetuple())
+        db.session.add(s)
+        db.session.commit()
+
+        tweet_milestones()
+        self.assertFalse(post_tweet.called)
 
 
 class ChartChangeTweetTestCase(unittest.TestCase):
