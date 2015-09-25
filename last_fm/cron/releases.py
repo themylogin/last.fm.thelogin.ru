@@ -69,7 +69,7 @@ def find_releases(feed):
                 release.title += " (%s)" % group.get("releaseType")
             release.content = ""
             if group.get("cover"):
-                release.content += group["cover"]
+                release.content += '<img src="%s" />' % group["cover"]
             yield release
         return
 
