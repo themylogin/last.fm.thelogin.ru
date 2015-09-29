@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+
+{% block title_part %} - Статистика{% endblock %}
+
+{% block container %}
+    <canvas id="canvas" width="{{ width }}" height="{{ height }}"></canvas>
+{% endblock %}
+
+{% block scripts %}
+    {{ super() }}
+    
+    <script type="text/javascript" src="/static/rhill-voronoi-core.js"></script>
+    <script type="text/javascript">
+        var canvas = document.getElementById('canvas');
+        var voronoi = new Voronoi();
+        var H = {{ history|safe }};
+        var bbox = {xl:0,xr:canvas.width,yt:0,yb:canvas.height};
+
+        var gg = [];
+        $.each(H, function(i,d){
+            if (d.length)
+            {
+                gg.push(d);
+            }
+        });
+
+        var HH = 0;
+        setInterval(function(){
+            var sites = gg[HH++];
+            if (sites == undefined)
+            {
+                return;
+            }
+
+            var ctx = canvas.getContext('2d');
+            // background
+            ctx.globalAlpha = 1;
+            ctx.beginPath();
+            ctx.rect(0,0,canvas.width,canvas.height);
+            ctx.fillStyle = 'white';
+            ctx.fill();
+            ctx.strokeStyle = '#888';
+            ctx.stroke();
+            // voronoi
+            var diagram = voronoi.compute(sites, bbox);
+            /*
+            // edges
+            // http://www.raymondhill.net/voronoi/rhill-voronoi-demo4.html
+            ctx.beginPath();
+            ctx.strokeStyle = '#000';
+            var edges = diagram.edges,
+                iEdge = edges.length,
+                edge, v;
+            while (iEdge--) {
+                edge = edges[iEdge];
+                v = edge.va;
+                ctx.moveTo(v.x,v.y);
+                v = edge.vb;
+                ctx.lineTo(v.x,v.y);
+                }
+            ctx.stroke();
+            // edges
+            ctx.beginPath();
+            ctx.fillStyle = 'red';
+            var vertices = diagram.vertices,
+                iVertex = vertices.length;
+            while (iVertex--) {
+                v = vertices[iVertex];
+                ctx.rect(v.x-1,v.y-1,3,3);
+                }
+            ctx.fill();
+            // sites
+            ctx.beginPath();
+            ctx.fillStyle = '#44f';
+            var sites = sites,
+                iSite = sites.length;
+            while (iSite--) {
+                v = sites[iSite];
+                ctx.rect(v.x-2/3,v.y-2/3,2,2);
+                }
+            ctx.fill();
+            */
+
+            $.each(diagram.cells, function(k, cell){
+                ctx.beginPath();
+                var halfedges = cell.halfedges,
+                    nHalfedges = halfedges.length,
+                    v = halfedges[0].getStartpoint();
+                ctx.moveTo(v.x,v.y);
+                for (var iHalfedge=0; iHalfedge<nHalfedges; iHalfedge++) {
+                    v = halfedges[iHalfedge].getEndpoint();
+                    ctx.lineTo(v.x,v.y);
+                    }
+                ctx.fillStyle = '#fff';
+                ctx.strokeStyle = '#000';
+                ctx.fill();
+                ctx.stroke();
+
+                $.each(sites, function(j, s){
+
+                   if (s.voronoiId == k)
+                   {
+                       var A = 0;
+                       var Cx = 0;
+                       var Cy = 0;
+                       for (var i = 0; i < cell.halfedges.length; i++)
+                       {
+                           var x_i = cell.halfedges[i].getEndpoint().x;
+                           var x_i1 = cell.halfedges[(i + 1) % cell.halfedges.length].getEndpoint().x;
+                           var y_i = cell.halfedges[i].getEndpoint().y;
+                           var y_i1 = cell.halfedges[(i + 1) % cell.halfedges.length].getEndpoint().y;
+
+                           A += x_i * y_i1 - x_i1 * y_i;
+                           Cx += (x_i + x_i1) * (x_i * y_i1 - x_i1 * y_i);
+                           Cy += (y_i + y_i1) * (x_i * y_i1 - x_i1 * y_i);
+                       }
+                       A /= 2;
+                       Cx /= 6 * A;
+                       Cy /= 6 * A;
+
+                        ctx.font="10px Georgia";
+                        ctx.fillStyle = '#44f';
+                        ctx.fillText(s.a, Cx - ctx.measureText(s.a).width / 2, Cy);
+                   }
+                });
+            });
+            console.log(sites);
+
+        }, 1000);
+
+    </script>
+{% endblock %}

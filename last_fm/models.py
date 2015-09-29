@@ -15,7 +15,8 @@ __all__ = [b"User", b"Scrobble", b"Artist", b"ArtistImage", b"UserArtist",
            b"GuestVisit",
            b"Repeat", b"Anniversary", b"Get",
            b"DashboardData",
-           b"Event"]
+           b"Event",
+           b"ArtistSimilarity"]
 
 
 class User(db.Model, UserMixin):
@@ -269,3 +270,15 @@ event_artist = db.Table("event_artist",
     db.Column("event_id", db.Integer, db.ForeignKey("event.id")),
     db.Column("artist_id", db.Integer, db.ForeignKey("artist.id"))
 )
+
+###
+
+
+class ArtistSimilarity(db.Model):
+    id              = db.Column(db.Integer, primary_key=True)
+    artist_1_id     = db.Column(db.Integer, db.ForeignKey("artist.id"))
+    artist_2_id     = db.Column(db.Integer, db.ForeignKey("artist.id"))
+    match           = db.Column(db.Float)
+
+    artist_1         = db.relationship("Artist", foreign_keys=[artist_1_id])
+    artist_2         = db.relationship("Artist", foreign_keys=[artist_2_id])

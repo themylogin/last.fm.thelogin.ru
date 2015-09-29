@@ -11,7 +11,8 @@ import math
 import numpy
 import operator
 import pytils
-from sqlalchemy.orm import joinedload
+from Queue import Queue
+from sqlalchemy.orm import aliased, joinedload
 from sqlalchemy.sql import distinct, func, literal_column, operators
 import time
 
@@ -868,3 +869,143 @@ def analytics_scrobble_time():
 
     return {"user": user,
             "tops": tops}
+
+
+@app.route("/analytics/battle_map")
+@cached_analytics_view
+def analytics_battle_map():
+    users = list(db.session.query(User).filter(User.id.in_(request.args.getlist("user", type=int))))
+
+    artists_dict = dict(map(lambda a: (a.id, a.name),
+                            db.session.query(Artist).\
+                                       filter(Artist.id.in_(db.session.query(UserArtist.artist_id).\
+                                                                       filter(UserArtist.user_id.in_([u.id
+                                                                                                      for u in users]),
+                                                                              UserArtist.scrobbles > 250)))))
+
+    artists_scrobbles = dict(map(lambda (artist_id, count): (artists_dict[artist_id], int(count)),
+                                 db.session.query(UserArtist.artist_id, func.sum(UserArtist.scrobbles)).\
+                                            group_by(UserArtist.artist_id).\
+                                            filter(UserArtist.artist_id.in_(artists_dict.keys()),
+                                                   UserArtist.user_id.in_([u.id for u in users]))))
+
+    artists_similarity = defaultdict(lambda: defaultdict(lambda: 0))
+    for similarity in db.session.query(ArtistSimilarity).\
+                                 filter(ArtistSimilarity.artist_1_id.in_(artists_dict.keys()),
+                                        ArtistSimilarity.artist_2_id.in_(artists_dict.keys())):
+        artists_similarity[similarity.artist_1.name][similarity.artist_2.name] = similarity.match
+        artists_similarity[similarity.artist_2.name][similarity.artist_1.name] = similarity.match
+
+    clusters = []
+    artists = set(artists_dict.values())
+    while len(artists):
+        tree = {"artist": sorted(artists, key=lambda artist: -len(filter(lambda v: v > 0,
+                                                                         artists_similarity[artist].values())))[0],
+                "children": []}
+        artists.remove(tree["artist"])
+
+        q = Queue()
+        q.put((tree["children"], tree["artist"], 12))
+        def build_node(dst, base, children_count):
+            for artist in sorted(filter(lambda artist: artists_similarity[artist][base] > 0, artists),
+                                 key=lambda artist: -artists_similarity[artist][base])[:children_count]:
+                artists.remove(artist)
+
+                child = {"artist": artist,
+                         "children": []}
+
+                dst.append(child)
+                q.put((child["children"], artist, 6))
+        while not q.empty():
+            build_node(*q.get())
+
+        clusters.append(tree)
+
+    """
+    clusters = [{"artist": "God",
+                 "children": [{"artist": "Mogwai",
+                               "children": [{"artist": "Ksi", "children": []},
+                                            {"artist": "Psi", "children": []}]},
+                              {"artist": "Trees",
+                               "children": [{"artist": "Collapse", "children": []},
+                                            {"artist": "Crush", "children": []},
+                                            {"artist": "Destroy", "children": []}]}]}]
+    artists_scrobbles = {"God": 5000,
+                 "Mogwai": 4000,
+                 "Ksi": 300,
+                 "Psi": 200,
+                 "Trees": 1000,
+                 "Collapse": 100,
+                 "Crush": 700,
+                 "Destroy": 400}
+    """
+
+    calc = {}
+    def build_calc(tree, x_y_r=None, initial_fi=math.pi / 2):
+        def make_child_x_y_r(artist, fi):
+            def child_x_y_r(scrobbles):
+                parent_x, parent_y, parent_r = (x_y_r or (lambda scrobbles: (0, 0, scrobbles[tree["artist"]])))(scrobbles)
+                # print("When calculating for", artist, parent_x, parent_y, parent_r, "fi = ", fi)
+
+                r = scrobbles[artist]
+                x = parent_x + (parent_r + r) * math.cos(fi)
+                y = parent_y + (parent_r + r) * math.sin(fi)
+                return x, y, r
+            return child_x_y_r
+
+        calc[tree["artist"]] = x_y_r or (lambda scrobbles: (0, 0, 0))
+        for i, child in enumerate(tree["children"]):
+            if x_y_r:
+                if len(tree["children"]) > 1:
+                    fi = math.pi / 4 + i / (len(tree["children"]) - 1) * (math.pi / 2)
+                else:
+                    fi = 0
+            else:
+                fi = i / len(tree["children"]) * (2 * math.pi)
+            fi = initial_fi - math.pi / 2 + fi
+            build_calc(child, make_child_x_y_r(child["artist"], fi), fi)
+    build_calc(clusters[0])
+
+    final_scrobbles = {k: v / max(artists_scrobbles.values())
+                       for k, v in artists_scrobbles.iteritems()}
+
+    # print {a: calc[a](final_scrobbles) for a in calc.keys()}
+
+    history = []
+    w, h = 1920, 1920
+    for uts in range(db.session.query(func.min(Scrobble.uts)).\
+                                filter(Scrobble.user_id.in_([u.id for u in users])).scalar(),
+                     db.session.query(func.max(Scrobble.uts)).\
+                                filter(Scrobble.user_id.in_([u.id for u in users])).scalar(),
+                     8640000):
+        artists_scrobbles = dict(db.session.query(Scrobble.artist, func.count(Scrobble.id)).\
+                                            group_by(Scrobble.artist).\
+                                            filter(Scrobble.user_id.in_([u.id for u in users]),
+                                                   Scrobble.uts < uts))
+        normalized_scrobbles = defaultdict(lambda: 0, **{k: v / max(artists_scrobbles.values())
+                                for k, v in artists_scrobbles.iteritems()})
+        min_x = 1e10
+        min_y = 1e10
+        max_x = -1e10
+        max_y = -1e10
+        for a in calc.keys():
+            if a not in normalized_scrobbles:
+                continue
+            x, y, r = calc[a](normalized_scrobbles)
+            min_x = min(min_x, x)
+            min_y = min(min_y, y)
+            max_x = max(max_x, x)
+            max_y = max(max_y, y)
+        x_offset = -min_x
+        y_offset = -min_y
+        scale = min(w / abs(min_x - max_x), h / abs(min_y - max_y))
+        points = []
+        for a in calc.keys():
+            if a not in normalized_scrobbles:
+                continue
+            x, y, r = calc[a](normalized_scrobbles)
+            x = (x + x_offset) * scale
+            y = (y + y_offset) * scale
+            points.append({"x":int(x),"y":int(y),"a":a})
+        history.append(points)
+    return {"history": json.dumps(history), "width": w, "height": h}

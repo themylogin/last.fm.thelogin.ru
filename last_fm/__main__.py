@@ -190,6 +190,68 @@ def dump_db_wo_sensitive_data():
         raise Exception("Dumping %s is not supported yet" % db_config.scheme)
 
 
+@manager.command
+def download_artist_similarities():
+    from lxml import objectify
+    import operator
+    from sqlalchemy.sql import func
+    import urllib
+    import urllib2
+    from themyutils.misc import retry
+
+    from bs4 import BeautifulSoup
+    import requests
+    artists = set(map(operator.itemgetter(0),
+                      db.session.query(Artist.name).\
+                                 filter(Artist.id.in_(db.session.query(UserArtist.artist_id).\
+                                                                 filter(UserArtist.user_id.in_([6, 11]),
+                                                                        UserArtist.scrobbles > 250)))))
+    for artist in artists:
+        """
+        artist_1 = db.session.query(Artist).filter(Artist.name == artist).first()
+        url = b"http://www.last.fm/ru/music/%s" % urllib.quote_plus(artist.encode("utf-8"), b"").replace(b"%2B", b"%252B")
+        for i, li in enumerate(BeautifulSoup(requests.get(url + b"/+similar").text).select("li.large-grid-wrapper")):
+            name = li.select("a.link-block-target")[0].text.strip()
+            artist_2 = db.session.query(Artist).filter(Artist.name == name).first()
+            if artist_2:
+                a1, a2 = tuple(sorted([artist_1, artist_2], key=lambda artist: artist.name.lower()))
+                if db.session.query(func.count(ArtistSimilarity)).\
+                              filter(ArtistSimilarity.artist_1 == a1,
+                                     ArtistSimilarity.artist_2 == a2).\
+                              scalar() == 0:
+                    similarity = ArtistSimilarity()
+                    similarity.artist_1 = a1
+                    similarity.artist_2 = a2
+                    similarity.match = 1 - i / 100
+                    print(artist_1.name, artist_2.name, similarity.match)
+                    db.session.add(similarity)
+                    db.session.commit()
+        """
+
+        #"""
+        xml = retry(lambda: objectify.fromstring(
+                        urllib2.urlopen("http://ws.audioscrobbler.com/2.0/?" + urllib.urlencode(dict(method="artist.getSimilar",
+                                                                                                     api_key=app.config["LAST_FM_API_KEY"],
+                                                                                                     artist=artist.encode("utf-8")))).read(),
+                        objectify.makeparser(encoding="utf-8", recover=True)
+                    ), max_tries=5, exceptions=((urllib2.HTTPError, lambda e: e.code not in [400]),))
+        for match in xml.similarartists.iter("artist"):
+            artist_2 = db.session.query(Artist).filter(Artist.name == unicode(match.name)).first()
+            if artist_2:
+                a1, a2 = tuple(sorted([artist_1, artist_2], key=lambda artist: artist.name.lower()))
+                if db.session.query(func.count(ArtistSimilarity)).\
+                              filter(ArtistSimilarity.artist_1 == a1,
+                                     ArtistSimilarity.artist_2 == a2).\
+                              scalar() == 0:
+                    similarity = ArtistSimilarity()
+                    similarity.artist_1 = a1
+                    similarity.artist_2 = a2
+                    similarity.match = float(match.match)
+                    db.session.add(similarity)
+                    db.session.commit()
+        #"""
+
+
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
     manager.run()
