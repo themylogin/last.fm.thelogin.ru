@@ -40,6 +40,7 @@ class PositiveAnniversaryBuilder(AnniversaryBuilder):
 
         return [user_artist for user_artist in db.session.query(UserArtist).\
                                                           filter(UserArtist.user == user,
+                                                                 UserArtist.scrobbles >= 250,
                                                                  anniversary_condition)
                 if db.session.query(func.max(Scrobble.uts)).\
                               filter(Scrobble.user == user_artist.user,
@@ -79,7 +80,8 @@ class NegativeAnniversaryBuilder(AnniversaryBuilder):
                                                           join(scrobble_alias,
                                                                (scrobble_alias.user_id == UserArtist.user_id) &
                                                                (scrobble_alias.artist == Artist.name)).\
-                                                          filter(UserArtist.user == user).\
+                                                          filter(UserArtist.user == user,
+                                                                 UserArtist.scrobbles >= 250).\
                                                           having(anniversary_condition).\
                                                           group_by(UserArtist.id)]
 
