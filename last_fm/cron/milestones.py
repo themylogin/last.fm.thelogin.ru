@@ -20,27 +20,25 @@ logger = logging.getLogger(__name__)
 
 @cron.job(minute="*/30")
 def tweet_milestones():
-    session = db.create_scoped_session()
-
     def get_artist_name(artist_id):
-        return session.query(Artist).get(artist_id).name
+        return db.session.query(Artist).get(artist_id).name
 
     def get_artist_name2scrobbles(artist_id2scrobbles):
         return dict(map(lambda (artist_id, scrobbles): (get_artist_name(artist_id), scrobbles),
                         artist_id2scrobbles.iteritems()))
 
-    chart_milestones_users = session.query(User).\
-                                     filter(User.download_scrobbles == True,
-                                            User.twitter_username != None,
-                                            User.twitter_track_chart_milestones == True)
-    artist_milestones_users = session.query(User).\
-                                      filter(User.download_scrobbles == True,
-                                             User.twitter_username != None,
-                                             User.twitter_track_artist_milestones == True)
-    artist_races_users = session.query(User).\
-                                 filter(User.download_scrobbles == True,
-                                        User.twitter_username != None,
-                                        (User.twitter_win_artist_races == True) | (User.twitter_lose_artist_races == True))
+    chart_milestones_users = db.session.query(User).\
+                                        filter(User.download_scrobbles == True,
+                                               User.twitter_username != None,
+                                               User.twitter_track_chart_milestones == True)
+    artist_milestones_users = db.session.query(User).\
+                                         filter(User.download_scrobbles == True,
+                                                User.twitter_username != None,
+                                                User.twitter_track_artist_milestones == True)
+    artist_races_users = db.session.query(User).\
+                                    filter(User.download_scrobbles == True,
+                                           User.twitter_username != None,
+                                           (User.twitter_win_artist_races == True) | (User.twitter_lose_artist_races == True))
     users = set(list(artist_milestones_users) + list(artist_races_users))
 
     for user in users:
@@ -55,32 +53,32 @@ def tweet_milestones():
         user2artist2scrobbles[user] = {}
         user2artist2scrobbles[user]["now"] = defaultdict(lambda: 0,
                                                          map(lambda (artist, scrobbles):
-                                                                 (get_artist(session, artist).id, scrobbles),
-                                                             session.query(Scrobble.artist, func.count(Scrobble.id)).\
-                                                                     group_by(Scrobble.artist).\
-                                                                     filter(Scrobble.user == user).\
-                                                                     having(func.count(Scrobble.id) >= 250)))
+                                                                 (get_artist(artist).id, scrobbles),
+                                                             db.session.query(Scrobble.artist, func.count(Scrobble.id)).\
+                                                                        group_by(Scrobble.artist).\
+                                                                        filter(Scrobble.user == user).\
+                                                                        having(func.count(Scrobble.id) >= 250)))
         user2artist2scrobbles[user]["then"] = defaultdict(lambda: 0,
-                                                          session.query(UserArtist.artist_id, UserArtist.scrobbles).\
-                                                                  filter(UserArtist.user == user,
-                                                                         UserArtist.scrobbles >= 250))
+                                                          db.session.query(UserArtist.artist_id, UserArtist.scrobbles).\
+                                                                     filter(UserArtist.user == user,
+                                                                            UserArtist.scrobbles >= 250))
 
     for user in users:
         for artist_id, scrobbles in user2artist2scrobbles[user]["now"].iteritems():
-            user_artist = session.query(UserArtist).\
-                                  filter(UserArtist.user == user,
-                                         UserArtist.artist_id == artist_id).\
-                                  first()
+            user_artist = db.session.query(UserArtist).\
+                                     filter(UserArtist.user == user,
+                                            UserArtist.artist_id == artist_id).\
+                                     first()
             if user_artist is None:
                 artist = get_artist_name(artist_id)
                 user_artist = UserArtist()
                 user_artist.user = user
                 user_artist.artist_id = artist_id
-                user_artist.first_scrobble = session.query(func.min(Scrobble.uts)).\
-                                                     filter(Scrobble.user == user,
-                                                            Scrobble.artist == artist).\
-                                                     scalar()
-                session.add(user_artist)
+                user_artist.first_scrobble = db.session.query(func.min(Scrobble.uts)).\
+                                                        filter(Scrobble.user == user,
+                                                               Scrobble.artist == artist).\
+                                                        scalar()
+                db.session.add(user_artist)
             user_artist.scrobbles = scrobbles
 
     twitter2user = {}
@@ -112,11 +110,11 @@ def tweet_milestones():
                     break
 
                 if artist2scrobbles_now[artist_id] >= milestone and artist2scrobbles_then[artist_id] < milestone:
-                    track = session.query(Scrobble).\
-                                    filter(Scrobble.user == user,
-                                           Scrobble.artist == get_artist_name(artist_id)).\
-                                    order_by(Scrobble.uts)\
-                                    [milestone - 1]
+                    track = db.session.query(Scrobble).\
+                                       filter(Scrobble.user == user,
+                                              Scrobble.artist == get_artist_name(artist_id)).\
+                                       order_by(Scrobble.uts)\
+                                       [milestone - 1]
                     milestones[artist_id] = (milestone, track.artist, track.track)
 
         for milestone, artist, track in milestones.values():
@@ -149,7 +147,7 @@ def tweet_milestones():
                                     artist,
                                 ))
 
-    session.commit()
+    db.session.commit()
 
 
 def chart_change_tweet(old, new):

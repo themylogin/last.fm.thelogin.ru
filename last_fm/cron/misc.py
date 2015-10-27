@@ -239,12 +239,10 @@ def calculate_coincidences():
 
 @cron.job(minute="*/5")
 def calculate_first_real_scrobbles():
-    session = db.create_scoped_session()
-
-    for user_artist in session.query(UserArtist).\
-                               filter(UserArtist.first_scrobble <= time.time() - 360 * 86400,
-                                      UserArtist.first_real_scrobble == None):
-        user_artist.first_real_scrobble = calculate_first_real_scrobble(session, user_artist.user,
+    for user_artist in db.session.query(UserArtist).\
+                                  filter(UserArtist.first_scrobble <= time.time() - 360 * 86400,
+                                         UserArtist.first_real_scrobble == None):
+        user_artist.first_real_scrobble = calculate_first_real_scrobble(user_artist.user,
                                                                         user_artist.artist.name).uts
 
-    session.commit()
+    db.session.commit()

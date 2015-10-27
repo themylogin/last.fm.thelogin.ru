@@ -86,22 +86,17 @@ def find_releases(feed):
 
 @cron.job(hour=5, minute=0)
 def update_user_artists():
-    session = db.create_scoped_session()
-    users = list(session.query(User).\
-                         filter(User.download_scrobbles == False,
-                                (User.last_library_update == None) |\
-                                    (User.last_library_update <= datetime.now() - timedelta(days=7))))
-    session.remove()
+    users = list(db.session.query(User).\
+                            filter(User.download_scrobbles == False,
+                                   (User.last_library_update == None) |\
+                                       (User.last_library_update <= datetime.now() - timedelta(days=7))))
 
     for u in users:
-        session = db.create_scoped_session()
-        artist_session = db.create_scoped_session()
+        user = db.session.query(User).get(u.id)
 
-        user = session.query(User).get(u.id)
-
-        session.query(UserArtist).\
-                filter(UserArtist.user == user).\
-                delete()
+        db.session.query(UserArtist).\
+                   filter(UserArtist.user == user).\
+                   delete()
 
         page = 1
         pages = -1
@@ -122,36 +117,33 @@ def update_user_artists():
             for artist in xml.artists.iter("artist"):
                 user_artist = UserArtist()
                 user_artist.user = user
-                user_artist.artist_id = get_artist(artist_session, unicode(artist.name)).id
+                user_artist.artist = get_artist(unicode(artist.name))
                 user_artist.scrobbles = int(artist.playcount)
-                session.add(user_artist)
+                db.session.add(user_artist)
 
                 user.last_library_update = datetime.now()
 
             page = page + 1
 
-        artist_session.commit()
-        session.commit()
+        db.session.commit()
 
 
 @cron.job(hour="*/2", minute=0)
 def update_user_releases():
     for u in db.session.query(User).\
                         filter(User.build_releases == True):
-        session = db.create_scoped_session()
+        user = db.session.query(User).get(u.id)
 
-        user = session.query(User).get(u.id)
-
-        session.query(UserRelease).\
-                filter(UserRelease.user == user).\
-                delete()
+        db.session.query(UserRelease).\
+                   filter(UserRelease.user == user).\
+                   delete()
 
         artists = filter(lambda t: len(t[0]) > 0, [(comparable_str(artist), artist, scrobbles)
                                                    for artist, scrobbles in get_user_artists(user, min_scrobbles=10)])
-        for release in session.query(Release).\
-                               join(ReleaseFeed).\
-                               filter(Release.date > datetime.now() - timedelta(days=30)).\
-                               order_by(Release.id.desc()):
+        for release in db.session.query(Release).\
+                                  join(ReleaseFeed).\
+                                  filter(Release.date > datetime.now() - timedelta(days=30)).\
+                                  order_by(Release.id.desc()):
             release_artists = map(comparable_str, re.split(" (&|and|feat\.?) ", re.split(" (-|–|—) ", release.title)[0]))
 
             for comparable_artist, artist, scrobbles in artists:
@@ -161,8 +153,8 @@ def update_user_releases():
                     user_release.release = release
                     user_release.artist = artist
                     user_release.artist_scrobbles = scrobbles
-                    session.add(user_release)
+                    db.session.add(user_release)
                     break
 
-        session.commit()
+        db.session.commit()
 

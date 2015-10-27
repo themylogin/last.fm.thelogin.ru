@@ -47,7 +47,7 @@ def debug_first_real_scrobble(user_id, min_scrobbles=250):
     for i, user_artist in enumerate(user_artists):
         artist = user_artist.artist.name
         print "%s (%d / %d)" % (artist, i + 1, len(user_artists))
-        new_first_real_scrobble[artist] = calculate_first_real_scrobble(db.session, user, artist).uts
+        new_first_real_scrobble[artist] = calculate_first_real_scrobble(user, artist).uts
 
     sections = [("Still broken", lambda user_artist, new_first_real_scrobble:\
                     (user_artist.first_real_scrobble != user_artist.first_real_scrobble_corrected and
@@ -109,7 +109,7 @@ def approximate_first_real_scrobble_max_scrobbles_before_gap(user_id,
         fixed = []
         for i, user_artist in enumerate(user_artists):
             artist = user_artist.artist.name
-            new_first_real_scrobble = calculate_first_real_scrobble(db.session, user, artist, value).uts
+            new_first_real_scrobble = calculate_first_real_scrobble(user, artist, value).uts
             if (user_artist.first_real_scrobble == user_artist.first_real_scrobble_corrected and
                 new_first_real_scrobble != user_artist.first_real_scrobble_corrected):
                 broken.append(artist)
@@ -127,7 +127,7 @@ def approximate_first_real_scrobble_max_scrobbles_before_gap(user_id,
         for i, user_artist in enumerate(user_artists):
             artist = user_artist.artist.name
             value = user_artist.scrobbles * percent_value / 100 + 0.5
-            new_first_real_scrobble = calculate_first_real_scrobble(db.session, user, artist, value).uts
+            new_first_real_scrobble = calculate_first_real_scrobble(user, artist, value).uts
             if (user_artist.first_real_scrobble == user_artist.first_real_scrobble_corrected and
                 new_first_real_scrobble != user_artist.first_real_scrobble_corrected):
                 broken.append(artist)

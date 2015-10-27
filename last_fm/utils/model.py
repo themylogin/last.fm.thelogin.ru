@@ -10,13 +10,14 @@ from last_fm.models import *
 __all__ = [b"get_artist", b"get_user_artists", b"update_scrobbles_for_user"]
 
 
-def get_artist(session, artist_name):
-    artist = session.query(Artist).filter(Artist.name == artist_name).first()
+def get_artist(artist_name, commit=True):
+    artist = db.session.query(Artist).filter(Artist.name == artist_name).first()
     if artist is None:
         artist = Artist()
         artist.name = artist_name
-        session.add(artist)
-        session.commit()
+        db.session.add(artist)
+        if commit:
+            db.session.commit()
     return artist
 
 
