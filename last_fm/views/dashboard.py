@@ -66,7 +66,7 @@ def dashboard():
 @dashboard_cache("artist")
 @login_required
 def dashboard_artist(artist):
-    db_artist = get_artist(db.session, artist)
+    db_artist = get_artist(artist)
 
     url = "http://www.last.fm/ru/music/%s" % urllib.quote_plus(artist, "").replace("%2B", "%252B")
     artist_wiki = BeautifulSoup(requests.get(url + "/+wiki").text)
