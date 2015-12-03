@@ -1027,17 +1027,18 @@ def analytics_curve_fit():
     user = db.session.query(User).get(request.args.get("user", type=int))
 
     artists = []
-    for artist in db.session.query(UserArtist).\
-                             filter(UserArtist.user == user,
-                                    UserArtist.scrobbles >= 250).\
-                             order_by(UserArtist.scrobbles.desc()):
+    for artist, in db.session.query(Scrobble.artist).\
+                              filter(Scrobble.user == user).\
+                              group_by(Scrobble.artist).\
+                              having(func.count(Scrobble.id) >= 250).\
+                              order_by(func.count(Scrobble.id).desc()):
         year2scrobbles = defaultdict(lambda: 0, db.session.execute("""
             SELECT YEAR(FROM_UNIXTIME(scrobble.uts)) AS y,
                    COUNT(*)
             FROM scrobble
             WHERE user_id = :user_id AND artist = :artist
             GROUP BY y
-        """, dict(user_id=user.id, artist=artist.artist.name)).fetchall())
+        """, dict(user_id=user.id, artist=artist)).fetchall())
         min_year = min(year2scrobbles.keys())
         max_year = max(year2scrobbles.keys())
         count_years = max_year - min_year + 1
@@ -1051,10 +1052,10 @@ def analytics_curve_fit():
         if max_year == datetime.now().year:
             sigma[-1] = 365 / datetime.now().timetuple().tm_yday
         estimates = {}
-        for func_name, func in target_funcs.iteritems():
+        for func_name, func_f in target_funcs.iteritems():
             try:
-                popt, pcov = curve_fit(func, xdata, ydata, sigma=sigma, diag=(1, 200, 1, 1))
-                estimates[func_name] = (popt, numpy.linalg.norm(numpy.multiply(numpy.array([func(x, *popt) for x in xdata]) -
+                popt, pcov = curve_fit(func_f, xdata, ydata, sigma=sigma, diag=(1, 200, 1, 1))
+                estimates[func_name] = (popt, numpy.linalg.norm(numpy.multiply(numpy.array([func_f(x, *popt) for x in xdata]) -
                                                                                numpy.array(ydata),
                                                                                1 / numpy.array(sigma))))
             except RuntimeError:
@@ -1067,7 +1068,7 @@ def analytics_curve_fit():
                     sorted_estimates = sorted_estimates[:i + 1]
                     break
 
-            g = lambda number: "%.2g" % number if abs(number < 100) else "%d" % number
+            g = lambda number: "%.2g" % number if abs(number) < 100 else "%d" % number
             default_format_func = lambda func_name, popt: "%s %s(%sx %s %s) + %s" % (g(popt[0]),
                                                                                      func_name,
                                                                                      g(popt[1]),
@@ -1076,7 +1077,7 @@ def analytics_curve_fit():
                                                                                      g(popt[3]))
             format_func = {"sqr": lambda func_name, popt: default_format_func(func_name, popt).replace("sqr(", " * (").\
                                                                                                replace(")", ")²")}
-            artists.append({"name": artist.artist.name,
+            artists.append({"name": artist,
                             "data": [["", ""] + [format_func.get(func_name, default_format_func)(func_name, popt)
                                                  for (func_name, (popt, rmse)) in sorted_estimates]] +
                                     sum([[["%d" % (min_year + x), ydata[x]] + [target_funcs[func_name](x, *popt)
