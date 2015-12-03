@@ -213,4 +213,8 @@
         {{ select_user(title="Пользователь") }}
         {{ integer_input("day_parts", "Разбить день на N частей", 24) }}
     {% endcall %}
+
+    {% call form("curve_fit", "scipy.optimize.curve_fit", "по всем элементарным функциям", "Science, bitch!") %}
+        {{ select_user(title="Пользователь") }}
+    {% endcall %}
 {% endblock %}

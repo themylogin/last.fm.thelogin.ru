@@ -12,6 +12,7 @@ import numpy
 import operator
 import pytils
 from Queue import Queue
+from scipy.optimize import curve_fit
 from sqlalchemy.orm import aliased, joinedload
 from sqlalchemy.sql import distinct, func, literal_column, operators
 import time
@@ -1009,3 +1010,80 @@ def analytics_battle_map():
             points.append({"x":int(x),"y":int(y),"a":a})
         history.append(points)
     return {"history": json.dumps(history), "width": w, "height": h}
+
+
+@app.route("/analytics/curve_fit")
+@cached_analytics_view
+def analytics_curve_fit():
+    funcs = {"* ": lambda x: x,
+             "sqr": lambda x: x * x,
+             "√": numpy.sqrt,
+             "exp": numpy.exp,
+             "log": numpy.log,
+             "sin": numpy.sin}
+    poison_func = lambda func: lambda x, a, b, c, d: (a * func(b * x + c) + d if abs(b) < 2 else 1e10)
+    target_funcs = {k: poison_func(v) for k, v in funcs.iteritems()}
+
+    user = db.session.query(User).get(request.args.get("user", type=int))
+
+    artists = []
+    for artist in db.session.query(UserArtist).\
+                             filter(UserArtist.user == user,
+                                    UserArtist.scrobbles >= 250).\
+                             order_by(UserArtist.scrobbles.desc()):
+        year2scrobbles = defaultdict(lambda: 0, db.session.execute("""
+            SELECT YEAR(FROM_UNIXTIME(scrobble.uts)) AS y,
+                   COUNT(*)
+            FROM scrobble
+            WHERE user_id = :user_id AND artist = :artist
+            GROUP BY y
+        """, dict(user_id=user.id, artist=artist.artist.name)).fetchall())
+        min_year = min(year2scrobbles.keys())
+        max_year = max(year2scrobbles.keys())
+        count_years = max_year - min_year + 1
+        if count_years < 4:
+            continue
+
+        xdata = range(0, count_years)
+        ydata = [year2scrobbles[min_year + i] for i in xdata]
+        sigma = [1 for i in xdata]
+        sigma[0] = max(ydata) / ydata[0]
+        if max_year == datetime.now().year:
+            sigma[-1] = 365 / datetime.now().timetuple().tm_yday
+        estimates = {}
+        for func_name, func in target_funcs.iteritems():
+            try:
+                popt, pcov = curve_fit(func, xdata, ydata, sigma=sigma, diag=(1, 200, 1, 1))
+                estimates[func_name] = (popt, numpy.linalg.norm(numpy.multiply(numpy.array([func(x, *popt) for x in xdata]) -
+                                                                               numpy.array(ydata),
+                                                                               1 / numpy.array(sigma))))
+            except RuntimeError:
+                pass
+        if len(estimates):
+            sorted_estimates = sorted(estimates.items(), key=lambda (func_name, (popt, rmse)): rmse)
+            for i, ((_, (_, rmse1)), (_, (_, rmse2))) in enumerate(zip(sorted_estimates, sorted_estimates[1:])):
+                if (rmse1 / len(ydata) > max(ydata) * 0.04 or
+                            rmse2 > rmse1 * 1.5):
+                    sorted_estimates = sorted_estimates[:i + 1]
+                    break
+
+            g = lambda number: "%.2g" % number if abs(number < 100) else "%d" % number
+            default_format_func = lambda func_name, popt: "%s %s(%sx %s %s) + %s" % (g(popt[0]),
+                                                                                     func_name,
+                                                                                     g(popt[1]),
+                                                                                     "+" if popt[2] >= 0 else "-",
+                                                                                     g(abs(popt[2])),
+                                                                                     g(popt[3]))
+            format_func = {"sqr": lambda func_name, popt: default_format_func(func_name, popt).replace("sqr(", " * (").\
+                                                                                               replace(")", ")²")}
+            artists.append({"name": artist.artist.name,
+                            "data": [["", ""] + [format_func.get(func_name, default_format_func)(func_name, popt)
+                                                 for (func_name, (popt, rmse)) in sorted_estimates]] +
+                                    sum([[["%d" % (min_year + x), ydata[x]] + [target_funcs[func_name](x, *popt)
+                                                                               for (func_name, (popt, rmse)) in sorted_estimates]] +
+                                         [[None, None] + [target_funcs[func_name](x + i / 10, *popt)
+                                                          for (func_name, (popt, rmse)) in sorted_estimates]
+                                          for i in range(1, 10)]
+                                         for x in xdata], [])})
+
+    return {"artists": json.dumps(artists), "user": user}
