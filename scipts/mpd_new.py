@@ -76,7 +76,7 @@ if __name__ == "__main__":
             continue
 
         for f in files:
-            abs_filename = os.path.join(root, f)
+            abs_filename = os.path.join(d, f)
             try:
                 if os.path.splitext(f) == b".mp3":
                     metadata = mutagen.easyid3.EasyID3(abs_filename)
