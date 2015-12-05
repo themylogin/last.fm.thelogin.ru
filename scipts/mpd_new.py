@@ -48,6 +48,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="last.fm mpd new music")
     parser.add_argument("path")
     parser.add_argument("user", type=user_by_username)
+    parser.add_argument("--exclude-dir", action="append", nargs="+")
     parser.add_argument("--sort", choices=("random", "recent"), default="recent")
     parser.add_argument("--update-cache", action="store_true")
     args = parser.parse_args(sys.argv[1:])
@@ -60,6 +61,10 @@ if __name__ == "__main__":
             sys.exit(1)
     with open(cache_path, "r") as f:
         directories = pickle.loads(f.read())
+
+    if args.exclude_dir:
+        directories = filter(lambda d: not any(os.path.relpath(d, args.path).startswith(e) for e in args.exclude_dir),
+                             directories)
 
     if args.sort == "random":
         random.shuffle(directories)
