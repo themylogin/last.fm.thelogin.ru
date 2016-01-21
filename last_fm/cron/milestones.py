@@ -2,9 +2,11 @@
 from __future__ import absolute_import, division, unicode_literals
 
 from collections import defaultdict
+from datetime import timedelta
 import itertools
 import logging
 from sqlalchemy.sql import func
+import time
 import twitter
 
 from twitter_overkill.utils import join_list
@@ -56,12 +58,10 @@ def tweet_milestones():
                                                                  (get_artist(artist).id, scrobbles),
                                                              db.session.query(Scrobble.artist, func.count(Scrobble.id)).\
                                                                         group_by(Scrobble.artist).\
-                                                                        filter(Scrobble.user == user).\
-                                                                        having(func.count(Scrobble.id) >= 250)))
+                                                                        filter(Scrobble.user == user)))
         user2artist2scrobbles[user]["then"] = defaultdict(lambda: 0,
                                                           db.session.query(UserArtist.artist_id, UserArtist.scrobbles).\
-                                                                     filter(UserArtist.user == user,
-                                                                            UserArtist.scrobbles >= 250))
+                                                                     filter(UserArtist.user == user))
 
     for user in users:
         for artist_id, scrobbles in user2artist2scrobbles[user]["now"].iteritems():
@@ -121,17 +121,23 @@ def tweet_milestones():
             post_tweet(user, "%d прослушиваний %s: %s!" % (milestone, artist, track.rstrip("!")))
 
     # races
+    user2twitter_friends = {}
+    def get_twitter_friends(user):
+        if user in user2twitter_friends:
+            return user2twitter_friends[user]
+
+        try:
+            user2twitter_friends[user] = get_api_for_user(user).GetFriendIDs(screen_name=user.twitter_username)
+            return user2twitter_friends[user]
+        except twitter.TwitterError:
+            logger.debug("Unable to GetFriendIDs for %s", user.twitter_username, exc_info=True)
+            return []
     for winner in artist_races_users:
         if winner.twitter_win_artist_races:
-            try:
-                friends = get_api_for_user(winner).GetFriendIDs(screen_name=winner.twitter_username)
-            except twitter.TwitterError:
-                logger.debug("Unable to GetFriendIDs for %s", winner.twitter_username, exc_info=True)
-                continue
-
-            for loser_twitter in friends:
+            for loser_twitter in get_twitter_friends(winner):
                 if loser_twitter in twitter2user:
                     loser = twitter2user[loser_twitter]
+                    # race
                     for artist_id in user2artist2scrobbles[winner]["now"]:
                         if user2artist2scrobbles[loser]["then"][artist_id] >= winner.twitter_artist_races_min_count and\
                            user2artist2scrobbles[winner]["then"][artist_id] < user2artist2scrobbles[loser]["then"][artist_id] and\
@@ -144,6 +150,51 @@ def tweet_milestones():
                             if loser.twitter_lose_artist_races:
                                 post_tweet(loser, "А @%s обогнал меня по количеству прослушиваний %s :(" % (
                                     winner.twitter_username,
+                                    artist,
+                                ))
+                    # slowpoke
+                    for artist_id in user2artist2scrobbles[winner]["now"]:
+                        artist = get_artist_name(artist_id)
+                        if user2artist2scrobbles[loser]["then"][artist_id] > 0 and\
+                           user2artist2scrobbles[loser]["then"][artist_id] < loser.twitter_artist_races_min_count and\
+                           user2artist2scrobbles[loser]["now"][artist_id] >= loser.twitter_artist_races_min_count and\
+                           user2artist2scrobbles[winner]["now"][artist_id] >= winner.twitter_artist_races_min_count and\
+                           db.session.query(func.count(Scrobble.id)).\
+                                      filter(Scrobble.user == winner,
+                                             Scrobble.artist == artist,
+                                             Scrobble.uts < time.time() - timedelta(days=90).total_seconds()).\
+                                      scalar() >= winner.twitter_artist_races_min_count and\
+                           db.session.query(func.count(Scrobble.id)).\
+                                       filter(Scrobble.user == winner,
+                                              Scrobble.artist == artist).\
+                                       scalar() >= db.session.query(func.count(Scrobble.id)).\
+                                                              filter(Scrobble.user_id.in_([
+                                                                         u.id
+                                                                         for u in db.session.query(User)
+                                                                         if u.twitter_data and\
+                                                                            u.twitter_data["id"] in get_twitter_friends(loser)
+                                                                     ]),
+                                                                     Scrobble.artist == artist).\
+                                                              group_by(Scrobble.user_id).\
+                                                              order_by(func.count(Scrobble.id).desc()).\
+                                                              limit(1).\
+                                                              scalar():
+                            if loser.twitter_lose_artist_races:
+                                months = int((time.time() - db.session.query(UserArtist).
+                                                                       filter(UserArtist.user == winner,
+                                                                              UserArtist.artist_id == artist_id).
+                                                                       one().first_scrobble) / (86400 * 30))
+                                if months >= 12:
+                                    if months >= 24:
+                                        text = "%d лет" % (months / 12)
+                                    else:
+                                        text = "года"
+                                else:
+                                    text = "%d месяцев" % months
+
+                                post_tweet(loser, "Вот @%s уже больше %s слушает %s, а до меня только сейчас дошло :(" % (
+                                    winner.twitter_username,
+                                    text,
                                     artist,
                                 ))
 

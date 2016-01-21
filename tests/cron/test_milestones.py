@@ -2,7 +2,7 @@
 from __future__ import absolute_import, division, unicode_literals
 
 from datetime import datetime, timedelta
-from mock import Mock, patch
+from mock import Mock, call, patch
 import time
 import unittest
 
@@ -56,7 +56,7 @@ class ArtistRaceTweetTestCase(FlaskIntegrationTestCase(app, db)):
         db.session.commit()
 
         tweet_milestones()
-        self.assertFalse(post_tweet.called)
+        post_tweet.assert_not_called()
 
         s = Scrobble()
         s.user = themylogin
@@ -67,7 +67,7 @@ class ArtistRaceTweetTestCase(FlaskIntegrationTestCase(app, db)):
         db.session.commit()
 
         tweet_milestones()
-        self.assertFalse(post_tweet.called)
+        post_tweet.assert_not_called()
 
 
 class ChartChangeTweetTestCase(unittest.TestCase):
@@ -233,3 +233,144 @@ class ChartChangeTweetTestCase(unittest.TestCase):
                                              'A Place to Bury Strangers2']),
                          "У меня Gridlock обогнали Skytree1 и Skytree2, а A Place to Bury Strangers1 и "
                          "A Place to Bury Strangers2 вытеснили Skytree1 и Skytree2!")
+
+class SlowpokeTestCase(FlaskIntegrationTestCase(app, db)):
+    @patch("last_fm.cron.milestones.post_tweet")
+    @patch("last_fm.cron.milestones.update_scrobbles_for_user")
+    @patch("last_fm.cron.milestones.get_api_for_user")
+    @patch("last_fm.cron.milestones.time")
+    def test_he_finally_starts_listening(self, TIME, get_api_for_user, update_scrobbles_for_user, post_tweet):
+        get_api_for_user.return_value = Mock(GetFriendIDs=Mock(return_value=[1, 2]))
+
+        themylogin = User()
+        themylogin.download_scrobbles = True
+        themylogin.twitter_username = "themylogin"
+        themylogin.twitter_data = {"id": 1}
+        themylogin.twitter_artist_races_min_count = 250
+        themylogin.twitter_win_artist_races = True
+        themylogin.twitter_lose_artist_races = True
+        db.session.add(themylogin)
+
+        mutantcornholio = User()
+        mutantcornholio.download_scrobbles = True
+        mutantcornholio.twitter_username = "mutantcornholio"
+        mutantcornholio.twitter_data = {"id": 2}
+        mutantcornholio.twitter_artist_races_min_count = 250
+        mutantcornholio.twitter_win_artist_races = True
+        mutantcornholio.twitter_lose_artist_races = True
+        db.session.add(mutantcornholio)
+
+        for i in range(2000):
+            s = Scrobble()
+            s.user = themylogin
+            s.artist = "Mogwai"
+            s.track = "Track #%d" % i
+            s.uts = time.mktime((datetime(2011, 1, 1, 0, 0, 0) + timedelta(hours=i * 20)).timetuple())
+            krayuiniyui_scrobble_mogwai = s.uts
+            db.session.add(s)
+        for i in range(200):
+            s = Scrobble()
+            s.user = mutantcornholio
+            s.artist = "Mogwai"
+            s.track = "Track #%d" % i
+            s.uts = time.mktime((datetime(2010, 1, 1, 0, 0, 0) + timedelta(hours=i)).timetuple())
+            db.session.add(s)
+        db.session.commit()
+
+        TIME.time = Mock(return_value=krayuiniyui_scrobble_mogwai + 86400 * 100)
+
+        tweet_milestones()
+        post_tweet.assert_not_called()
+
+        for i in range(200):
+            s = Scrobble()
+            s.user = mutantcornholio
+            s.artist = "Mogwai"
+            s.track = "RAVE TAPES"
+            s.uts = krayuiniyui_scrobble_mogwai + 86400 * 100 + i * 3600
+            db.session.add(s)
+            db.session.commit()
+
+        TIME.time = Mock(return_value=krayuiniyui_scrobble_mogwai + 86400 * 100 + 200 * 3600 + 86400)
+
+        tweet_milestones()
+        self.assertEqual(post_tweet.call_count, 1)
+        self.assertEqual(post_tweet.call_args_list[0][0][1], "Вот @themylogin уже больше 4 лет слушает Mogwai, а до меня только сейчас дошло :(")
+
+    @patch("last_fm.cron.milestones.post_tweet")
+    @patch("last_fm.cron.milestones.update_scrobbles_for_user")
+    @patch("last_fm.cron.milestones.get_api_for_user")
+    @patch("last_fm.cron.milestones.time")
+    def test_he_finally_starts_listening_but_i_am_not_alone(self, TIME, get_api_for_user, update_scrobbles_for_user, post_tweet):
+        get_api_for_user.return_value = Mock(GetFriendIDs=Mock(return_value=[1, 2, 3]))
+
+        themylogin = User()
+        themylogin.download_scrobbles = True
+        themylogin.twitter_username = "themylogin"
+        themylogin.twitter_data = {"id": 1}
+        themylogin.twitter_artist_races_min_count = 250
+        themylogin.twitter_win_artist_races = True
+        themylogin.twitter_lose_artist_races = True
+        db.session.add(themylogin)
+
+        mutantcornholio = User()
+        mutantcornholio.download_scrobbles = True
+        mutantcornholio.twitter_username = "mutantcornholio"
+        mutantcornholio.twitter_data = {"id": 2}
+        mutantcornholio.twitter_artist_races_min_count = 250
+        mutantcornholio.twitter_win_artist_races = True
+        mutantcornholio.twitter_lose_artist_races = True
+        db.session.add(mutantcornholio)
+
+        kseniya = User()
+        kseniya.download_scrobbles = True
+        kseniya.twitter_username = "yaetomogu"
+        kseniya.twitter_data = {"id": 3}
+        kseniya.twitter_artist_races_min_count = 250
+        kseniya.twitter_win_artist_races = True
+        kseniya.twitter_lose_artist_races = True
+        db.session.add(kseniya)
+
+        for i in range(2000):
+            s = Scrobble()
+            s.user = themylogin
+            s.artist = "Mogwai"
+            s.track = "Track #%d" % i
+            s.uts = time.mktime((datetime(2011, 1, 1, 0, 0, 0) + timedelta(hours=i * 20)).timetuple())
+            krayuiniyui_scrobble_mogwai = s.uts
+            db.session.add(s)
+        for i in range(1000):
+            s = Scrobble()
+            s.user = kseniya
+            s.artist = "Mogwai"
+            s.track = "Track #%d" % i
+            s.uts = time.mktime((datetime(2012, 1, 1, 0, 0, 0) + timedelta(hours=i * 10)).timetuple())
+            db.session.add(s)
+        for i in range(200):
+            s = Scrobble()
+            s.user = mutantcornholio
+            s.artist = "Mogwai"
+            s.track = "Track #%d" % i
+            s.uts = time.mktime((datetime(2010, 1, 1, 0, 0, 0) + timedelta(hours=i)).timetuple())
+            db.session.add(s)
+        db.session.commit()
+
+        TIME.time = Mock(return_value=krayuiniyui_scrobble_mogwai + 86400 * 100)
+
+        tweet_milestones()
+        post_tweet.assert_not_called()
+
+        for i in range(200):
+            s = Scrobble()
+            s.user = mutantcornholio
+            s.artist = "Mogwai"
+            s.track = "RAVE TAPES"
+            s.uts = krayuiniyui_scrobble_mogwai + 86400 * 100 + i * 3600
+            db.session.add(s)
+            db.session.commit()
+
+        TIME.time = Mock(return_value=krayuiniyui_scrobble_mogwai + 86400 * 100 + 200 * 3600 + 86400)
+
+        tweet_milestones()
+        self.assertEqual(post_tweet.call_count, 1)
+        self.assertEqual(post_tweet.call_args_list[0][0][1], "Вот @themylogin уже больше 4 лет слушает Mogwai, а до меня только сейчас дошло :(")
