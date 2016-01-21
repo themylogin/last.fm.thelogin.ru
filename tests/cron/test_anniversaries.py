@@ -49,7 +49,7 @@ class TweetAnniversariesTestCase(FlaskIntegrationTestCase(app, db)):
     @patch("last_fm.cron.anniversaries.post_tweet")
     def test_no_anniversaries(self, post_tweet):
         tweet_anniversaries()
-        post_tweet.assert_no_calls()
+        post_tweet.assert_not_called()
 
     @patch("last_fm.cron.anniversaries.datetime", Mock(now=Mock(return_value=datetime(2014, 1, 1, 0, 0, 5))))
     @patch("last_fm.cron.anniversaries.post_tweet")
@@ -61,7 +61,7 @@ class TweetAnniversariesTestCase(FlaskIntegrationTestCase(app, db)):
     @patch("last_fm.cron.anniversaries.post_tweet")
     def test_no_positive_anniversary(self, post_tweet):
         tweet_anniversaries()
-        post_tweet.assert_no_calls()
+        post_tweet.assert_not_called()
 
     @patch("last_fm.cron.anniversaries.datetime", Mock(now=Mock(return_value=datetime(2014, 9, 26, 0, 0, 5))))
     @patch("last_fm.cron.anniversaries.post_tweet")
