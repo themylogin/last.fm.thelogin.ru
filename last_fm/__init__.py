@@ -28,7 +28,7 @@ if runner in ["celery", "gunicorn", "uwsgi"]:
     setup_logging_handler("last_fm-%s" % runner)
 
     app.config["RAVEN_IGNORE_EXCEPTIONS"] = [HTTPException]
-    sentry = Sentry(app)
+    sentry = Sentry(app, wrap_wsgi=runner != "gunicorn")
 
 import last_fm.api
 import last_fm.cron

@@ -4,25 +4,17 @@ from __future__ import absolute_import, division, unicode_literals
 from datetime import datetime
 from flask import *
 from flask.ext.restful import abort, Resource
-from redis import Redis
+import gevent
+from geventwebsocket import WebSocketError
 
 from last_fm.app import app
 from last_fm.db import db
 from last_fm.models import *
 from last_fm.utils import normalize_mac_address
 
-version_key = "last.fm:guests_api:guests_version"
-version_pubsub_key = "last.fm:guests_api:guests_version_pubsub"
-
-while True:
-    try:
-        Redis().incr(version_key)
-    except Exception:
-        pass
-    else:
-        break
-
 __all__ = [b"Users", b"UserByDevice", b"Guests", b"ManageGuests"]
+
+guest_asyncs = set()
 
 
 def prepare_user(user):
@@ -88,33 +80,45 @@ class UserByDevice(Resource):
 
 class Guests(Resource):
     def get(self):
-        range_header = request.headers.get("Range", None)
-        if range_header:
-            try:
-                client_version = int(range_header.split("-")[0])
-            except Exception:
-                abort(400)
+        if "wsgi.websocket" in request.environ:
+            async = gevent.get_hub().loop.async()
+            async.start(lambda: None)
 
-            redis = Redis()
-            pubsub = redis.pubsub()
-            pubsub.subscribe([version_pubsub_key])
-            server_version = int(redis.get(version_key))
-            if server_version == client_version:
-                for item in pubsub.listen():
-                    if item["type"] == "message":
-                        break
-        
-        version = int(Redis().get(version_key))
-        return {
-            "version":  version,
+            guest_asyncs.add(async)
+
+            ws = request.environ["wsgi.websocket"]
+
+            try:
+                ws.send(self.dump_guests())
+
+                while True:
+                    gevent.get_hub().wait(async)
+                    ws.send(self.dump_guests())
+            except WebSocketError:
+                pass
+            finally:
+                guest_asyncs.remove(async)
+
+                if not ws.closed:
+                    ws.close()
+
+            return Response()
+        else:
+            return Response(self.dump_guests(), mimetype="application/json")
+
+    def dump_guests(self):
+        guests = json.dumps({
             "guests":   [
                 {
                     "user":     prepare_user(user),
                     "came":     prepare_visit(current_visit)["came"],
                 }
-                for current_visit, user in map(lambda visit: (visit, visit.user), db.session.query(GuestVisit).filter_by(left=None))
+                for current_visit, user in map(lambda visit: (visit, visit.user),
+                                               db.session.query(GuestVisit).filter_by(left=None))
             ]
-        }
+        })
+        db.session.close()
+        return guests
 
 
 class ManageGuests(Resource):
@@ -162,6 +166,5 @@ class ManageGuests(Resource):
 
     @classmethod
     def notify_changes(cls):
-        redis = Redis()
-        redis.incr(version_key)
-        redis.publish(version_pubsub_key, "")
+        for async in guest_asyncs.copy():
+            async.send()
