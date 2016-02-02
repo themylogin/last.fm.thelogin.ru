@@ -68,7 +68,7 @@ def dashboard():
 def dashboard_artist(artist):
     db_artist = get_artist(artist)
 
-    url = "http://www.last.fm/ru/music/%s" % urllib.quote_plus(artist, "").replace("%2B", "%252B")
+    url = "http://www.last.fm/ru/music/%s" % urllib.quote(artist.encode("utf-8")).replace("%2B", "%252B")
     artist_wiki = BeautifulSoup(requests.get(url + "/+wiki").text)
     artist_comments = BeautifulSoup(requests.get(url + "/comments").text)
 
