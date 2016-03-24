@@ -33,7 +33,8 @@ def recommendations(provider, username):
     if action == "print":
         return jsonify({"recommendations": list(recommendations)})
     elif action == "stream":
-        return Response(stream_with_context(stream_recommendations(recommendations)))
+        return Response(stream_with_context(stream_recommendations(recommendations)),
+                        headers={b"X-Accel-Buffering": b"no"})
     elif action == "mpd-add":
         mpd = get_mpd()
         for recommendation in recommendations:
