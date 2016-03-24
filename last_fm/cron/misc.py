@@ -13,14 +13,15 @@ from last_fm.analytics import calculate_first_real_scrobble
 from last_fm.celery import cron
 from last_fm.db import db
 from last_fm.models import *
+from last_fm.utils.mpd import get_mpd
+from last_fm.utils.string import streq
 
 logger = logging.getLogger(__name__)
     
 
 @cron.job(hour=5, minute=0)
 def calculate_approximate_track_lengths():
-    client = mpd.MPDClient()
-    client.connect("192.168.0.4", 6600)
+    client = get_mpd()
 
     db.session.execute("""
         DELETE FROM approximate_track_length
@@ -140,16 +141,11 @@ def calculate_approximate_track_lengths():
             stat_length = length
             real_length = None
 
-            def streq(s1, s2):
-                s1l = s1.lower()
-                s2l = s2.lower()
-                return s1l.startswith(s2l) or s2l.startswith(s1l)
-
             try:
                 result = list(client.search("title", track.encode("utf-8")))
             except mpd.MPDError:
                 logger.warning("MPD Error", exc_info=True)
-                client.connect("192.168.0.4", 6600)
+                client = get_mpd()
             else:
                 for tr in result:
                     if "artist" not in tr:

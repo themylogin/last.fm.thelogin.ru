@@ -11,3 +11,5 @@ api.add_resource(Users, "/users")
 api.add_resource(UserByDevice, "/users/by-device/<device>")
 api.add_resource(Guests, "/guests")
 api.add_resource(ManageGuests, "/guests/<int:user_id>")
+
+import last_fm.api.recommendations
