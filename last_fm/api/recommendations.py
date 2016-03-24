@@ -68,7 +68,7 @@ def new_recommendations(user):
                      for root, dirs, files in os.walk(d)], [])
         files = filter(lambda x: any(x.endswith(ext) for ext in (b".flac", b".mp3")), files)
         if not (4 <= len(files) <= 30):
-            logger.warning("%r len = %d" % (d, len(files)))
+            logger.info("%r len = %d" % (d, len(files)))
             continue
 
         for f in files:
@@ -101,7 +101,7 @@ def new_recommendations(user):
                     if limit == 0:
                         return
                 else:
-                    logger.warning("%r — %r from %r was scrobbled %d time(s)" % (artist, title, d, scrobble_count))
+                    logger.info("%r — %r from %r was scrobbled %d time(s)" % (artist, title, d, scrobble_count))
 
                 break
 
