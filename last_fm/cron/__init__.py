@@ -7,7 +7,6 @@ import last_fm.cron.events
 import last_fm.cron.gets
 import last_fm.cron.milestones
 import last_fm.cron.misc
-import last_fm.cron.recommendations
 import last_fm.cron.releases
 import last_fm.cron.repeats
 import last_fm.cron.year_stats

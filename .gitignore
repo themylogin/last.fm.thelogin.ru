@@ -39,7 +39,6 @@ nosetests.xml
 .idea
 
 alembic.ini
-data/mpd.cache
 last_fm/config.py
 last_fm/static/dump.sql.gz
 last_fm/static/artists/*

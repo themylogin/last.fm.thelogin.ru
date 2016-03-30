@@ -13,3 +13,4 @@ api.add_resource(Guests, "/guests")
 api.add_resource(ManageGuests, "/guests/<int:user_id>")
 
 import last_fm.api.recommendations
+import last_fm.api.sql
