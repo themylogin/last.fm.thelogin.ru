@@ -215,7 +215,7 @@ def download_artist_similarities():
             artist_2 = db.session.query(Artist).filter(Artist.name == name).first()
             if artist_2:
                 a1, a2 = tuple(sorted([artist_1, artist_2], key=lambda artist: artist.name.lower()))
-                if db.session.query(func.count(ArtistSimilarity)).\
+                if db.session.query(func.count(ArtistSimilarity.id)).\
                               filter(ArtistSimilarity.artist_1 == a1,
                                      ArtistSimilarity.artist_2 == a2).\
                               scalar() == 0:
@@ -239,7 +239,7 @@ def download_artist_similarities():
             artist_2 = db.session.query(Artist).filter(Artist.name == unicode(match.name)).first()
             if artist_2:
                 a1, a2 = tuple(sorted([artist_1, artist_2], key=lambda artist: artist.name.lower()))
-                if db.session.query(func.count(ArtistSimilarity)).\
+                if db.session.query(func.count(ArtistSimilarity.id)).\
                               filter(ArtistSimilarity.artist_1 == a1,
                                      ArtistSimilarity.artist_2 == a2).\
                               scalar() == 0:

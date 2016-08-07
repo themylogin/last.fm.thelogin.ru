@@ -5,7 +5,6 @@ from collections import defaultdict, OrderedDict
 from datetime import datetime, timedelta
 import itertools
 import logging
-import mpd
 from sqlalchemy.sql import func, literal_column
 import time
 
@@ -13,7 +12,6 @@ from last_fm.analytics import calculate_first_real_scrobble
 from last_fm.celery import cron
 from last_fm.db import db
 from last_fm.models import *
-from last_fm.utils.mpd import get_mpd
 from last_fm.utils.string import streq
 
 logger = logging.getLogger(__name__)
@@ -26,7 +24,7 @@ def calculate_approximate_track_lengths():
     db.session.execute("""
         DELETE FROM approximate_track_length
         WHERE real_length IS NULL AND last_update < (
-            SELECT FROM_UNIXTIME(MAX(uts))
+            SELECT TO_TIMESTAMP(MAX(uts))
             FROM scrobble
             WHERE scrobble.artist = approximate_track_length.artist AND
                   scrobble.track = approximate_track_length.track
@@ -186,27 +184,27 @@ def calculate_approximate_track_lengths():
 
 @cron.job(day_of_month=1, hour=6, minute=0)
 def calculate_coincidences():
-    db.session.execute("DELETE FROM `" + Coincidence.__tablename__ + "`")
+    db.session.execute("DELETE FROM coincidence")
 
     step = 1e7
     for i in xrange(*db.session.query(func.min(Scrobble.uts),
                                       func.max(Scrobble.uts),
                                       literal_column(str(step))).first()):
         db.session.execute("""
-            INSERT INTO `""" + Coincidence.__tablename__ + """` (artist, track, users_uts)
+            INSERT INTO coincidence (artist, track, users_uts)
             SELECT
                 first_scrobble.artist,
                 first_scrobble.track,
                 CONCAT(
                     CONCAT_WS(":", first_scrobble.user_id, first_scrobble.uts),
                     ";",
-                    GROUP_CONCAT(
-                        CONCAT_WS(":", succeeding_scrobbles.user_id, succeeding_scrobbles.uts)
-                        SEPARATOR ";"
+                    STRING_AGG(
+                        CONCAT_WS(":", succeeding_scrobbles.user_id, succeeding_scrobbles.uts),
+                        ";"
                     )
                 )
-            FROM `""" + Scrobble.__tablename__ + """` first_scrobble
-            INNER JOIN `""" + Scrobble.__tablename__ + """` succeeding_scrobbles ON (
+            FROM scrobble first_scrobble
+            INNER JOIN scrobble succeeding_scrobbles ON (
                 succeeding_scrobbles.user_id != first_scrobble.user_id AND
                 succeeding_scrobbles.artist = first_scrobble.artist AND
                 succeeding_scrobbles.track = first_scrobble.track AND
@@ -215,7 +213,7 @@ def calculate_coincidences():
                     (succeeding_scrobbles.uts BETWEEN first_scrobble.uts + 1 AND first_scrobble.uts + 300)
                 )
             )
-            LEFT JOIN `""" + Scrobble.__tablename__ + """` preceding_scrobbles ON (
+            LEFT JOIN scrobble preceding_scrobbles ON (
                 preceding_scrobbles.user_id != first_scrobble.user_id AND
                 preceding_scrobbles.artist = first_scrobble.artist AND
                 preceding_scrobbles.track = first_scrobble.track AND

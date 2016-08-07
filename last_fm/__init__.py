@@ -2,12 +2,14 @@
 from __future__ import absolute_import, division, unicode_literals
 
 from flask.ext.bootstrap import Bootstrap
+from raven import Client
+from raven.contrib.celery import register_signal, register_logger_signal
 from raven.contrib.flask import Sentry
+from redis import Redis
 import socket
 import sys
 from werkzeug.exceptions import HTTPException
 
-from themylog.client import setup_logging_handler
 from themyutils.flask.redis_session import RedisSessionInterface
 
 from last_fm.app import app
@@ -21,14 +23,18 @@ socket.setdefaulttimeout(10)
 
 Bootstrap(app)
 login_manager.init_app(app)
-app.session_interface = RedisSessionInterface(prefix="last.fm:session:")
+app.session_interface = RedisSessionInterface(redis=Redis(host="redis"),
+                                              prefix="last.fm:session:")
 
 runner = sys.argv[0].split("/")[-1]
 if runner in ["celery", "gunicorn", "uwsgi"]:
-    setup_logging_handler("last_fm-%s" % runner)
-
     app.config["RAVEN_IGNORE_EXCEPTIONS"] = [HTTPException]
+
     sentry = Sentry(app, wrap_wsgi=runner != "gunicorn")
+
+    sentry_client = Client(app.config["SENTRY_DSN"])
+    register_logger_signal(sentry_client)
+    register_signal(sentry_client)
 
 import last_fm.api
 import last_fm.cron

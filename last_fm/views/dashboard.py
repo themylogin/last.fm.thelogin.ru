@@ -369,7 +369,7 @@ def dashboard_no_music():
                                         "scrobbles": scrobbles,
                                         "scrobbles_grouped": scrobbles_grouped})
         else:
-            if db.session.query(func.count(Scrobble)).\
+            if db.session.query(func.count(Scrobble.id)).\
                           filter(Scrobble.uts < time.mktime(start.timetuple()),
                                  Scrobble.user == current_user).\
                           scalar() == 0:

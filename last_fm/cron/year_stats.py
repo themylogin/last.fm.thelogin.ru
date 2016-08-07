@@ -107,17 +107,17 @@ def tweet_year_stats():
                                                                           ~ Scrobble.artist.in_(["Kokomo", "Laura"]),
                                                                           scrobble_in_smarthome).\
                                                                    group_by(Scrobble.artist):
-                scrobbles_before_first_smarthome_scrobble = db.session.query(func.count(Scrobble)).\
+                scrobbles_before_first_smarthome_scrobble = db.session.query(func.count(Scrobble.id)).\
                                                                        filter(Scrobble.user == user,
                                                                               Scrobble.artist == artist,
                                                                               Scrobble.uts < first_smarthome_scrobble_uts).\
                                                                        scalar()
-                scrobbles_in_smarthome = db.session.query(func.count(Scrobble)).\
+                scrobbles_in_smarthome = db.session.query(func.count(Scrobble.id)).\
                                                     filter(Scrobble.user == user,
                                                            Scrobble.artist == artist,
                                                            scrobble_in_smarthome).\
                                                     scalar()
-                scrobbles_after_first_smarthome_scrobble_not_in_smarthome = db.session.query(func.count(Scrobble)).\
+                scrobbles_after_first_smarthome_scrobble_not_in_smarthome = db.session.query(func.count(Scrobble.id)).\
                                                                                        filter(Scrobble.user == user,
                                                                                               Scrobble.artist == artist,
                                                                                               Scrobble.uts >= first_smarthome_scrobble_uts,

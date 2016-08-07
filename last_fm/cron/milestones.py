@@ -12,6 +12,7 @@ import twitter
 from twitter_overkill.utils import join_list
 
 from last_fm.celery import cron
+from last_fm.constants import SIGNIFICANT_ARTIST_SCROBBLES
 from last_fm.db import db
 from last_fm.models import *
 from last_fm.utils.model import update_scrobbles_for_user, get_artist
@@ -139,7 +140,7 @@ def tweet_milestones():
                     loser = twitter2user[loser_twitter]
                     # race
                     for artist_id in user2artist2scrobbles[winner]["now"]:
-                        if user2artist2scrobbles[loser]["then"][artist_id] >= winner.twitter_artist_races_min_count and\
+                        if user2artist2scrobbles[loser]["then"][artist_id] >= SIGNIFICANT_ARTIST_SCROBBLES and\
                            user2artist2scrobbles[winner]["then"][artist_id] < user2artist2scrobbles[loser]["then"][artist_id] and\
                            user2artist2scrobbles[winner]["now"][artist_id] > user2artist2scrobbles[loser]["now"][artist_id]:
                             artist = get_artist_name(artist_id)
@@ -155,30 +156,50 @@ def tweet_milestones():
                     # slowpoke
                     for artist_id in user2artist2scrobbles[winner]["now"]:
                         artist = get_artist_name(artist_id)
-                        if user2artist2scrobbles[loser]["then"][artist_id] > 0 and\
-                           user2artist2scrobbles[loser]["then"][artist_id] < loser.twitter_artist_races_min_count and\
-                           user2artist2scrobbles[loser]["now"][artist_id] >= loser.twitter_artist_races_min_count and\
-                           user2artist2scrobbles[winner]["now"][artist_id] >= winner.twitter_artist_races_min_count and\
-                           db.session.query(func.count(Scrobble.id)).\
-                                      filter(Scrobble.user == winner,
-                                             Scrobble.artist == artist,
-                                             Scrobble.uts < time.time() - timedelta(days=90).total_seconds()).\
-                                      scalar() >= winner.twitter_artist_races_min_count and\
-                           db.session.query(func.count(Scrobble.id)).\
-                                       filter(Scrobble.user == winner,
-                                              Scrobble.artist == artist).\
-                                       scalar() >= db.session.query(func.count(Scrobble.id)).\
-                                                              filter(Scrobble.user_id.in_([
-                                                                         u.id
+                        if (user2artist2scrobbles[loser]["then"][artist_id] > 0 and
+                                user2artist2scrobbles[loser]["then"][artist_id] < SIGNIFICANT_ARTIST_SCROBBLES and
+                                user2artist2scrobbles[loser]["now"][artist_id] >= SIGNIFICANT_ARTIST_SCROBBLES and
+                                (db.session.query(func.count(Scrobble.id)).
+                                            filter(Scrobble.user == loser,
+                                                   Scrobble.artist == artist,
+                                                   Scrobble.uts > time.time() - timedelta(days=90).total_seconds()).
+                                             scalar()
+                                 /
+                                 db.session.query(func.count(Scrobble.id)).
+                                            filter(Scrobble.user == loser,
+                                                   Scrobble.artist == artist,
+                                                   Scrobble.uts > time.time() - timedelta(days=365).total_seconds()).
+                                            scalar()
+
+                                    >=
+
+                                 90
+                                 /
+                                 365) and
+
+                                user2artist2scrobbles[winner]["now"][artist_id] >= SIGNIFICANT_ARTIST_SCROBBLES and
+                                (db.session.query(func.count(Scrobble.id)).
+                                            filter(Scrobble.user == winner,
+                                                   Scrobble.artist == artist,
+                                                   Scrobble.uts < time.time() - timedelta(days=90).total_seconds()).
+                                            scalar()
+                                     >=
+                                 SIGNIFICANT_ARTIST_SCROBBLES) and
+                                (db.session.query(func.count(Scrobble.id)).
+                                            filter(Scrobble.user == winner,
+                                                   Scrobble.artist == artist).
+                                            scalar()
+                                     >=
+                                 db.session.query(func.count(Scrobble.id)).
+                                            filter(Scrobble.user_id.in_([u.id
                                                                          for u in db.session.query(User)
-                                                                         if u.twitter_data and\
-                                                                            u.twitter_data["id"] in get_twitter_friends(loser)
-                                                                     ]),
-                                                                     Scrobble.artist == artist).\
-                                                              group_by(Scrobble.user_id).\
-                                                              order_by(func.count(Scrobble.id).desc()).\
-                                                              limit(1).\
-                                                              scalar():
+                                                                         if (u.twitter_data and
+                                                                             u.twitter_data["id"] in get_twitter_friends(loser))]),
+                                                   Scrobble.artist == artist).
+                                            group_by(Scrobble.user_id).
+                                            order_by(func.count(Scrobble.id).desc()).
+                                            limit(1).
+                                            scalar())):
                             if loser.twitter_lose_artist_races:
                                 months = int((time.time() - db.session.query(UserArtist).
                                                                        filter(UserArtist.user == winner,

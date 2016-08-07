@@ -25,7 +25,6 @@ class ArtistRaceTweetTestCase(FlaskIntegrationTestCase(app, db)):
         themylogin.download_scrobbles = True
         themylogin.twitter_username = "themylogin"
         themylogin.twitter_data = {"id": 1}
-        themylogin.twitter_artist_races_min_count = 250
         themylogin.twitter_win_artist_races = True
         themylogin.twitter_lose_artist_races = True
         db.session.add(themylogin)
@@ -34,7 +33,6 @@ class ArtistRaceTweetTestCase(FlaskIntegrationTestCase(app, db)):
         mutantcornholio.download_scrobbles = True
         mutantcornholio.twitter_username = "mutantcornholio"
         mutantcornholio.twitter_data = {"id": 2}
-        mutantcornholio.twitter_artist_races_min_count = 250
         mutantcornholio.twitter_win_artist_races = True
         mutantcornholio.twitter_lose_artist_races = True
         db.session.add(mutantcornholio)
@@ -246,7 +244,6 @@ class SlowpokeTestCase(FlaskIntegrationTestCase(app, db)):
         themylogin.download_scrobbles = True
         themylogin.twitter_username = "themylogin"
         themylogin.twitter_data = {"id": 1}
-        themylogin.twitter_artist_races_min_count = 250
         themylogin.twitter_win_artist_races = True
         themylogin.twitter_lose_artist_races = True
         db.session.add(themylogin)
@@ -255,7 +252,6 @@ class SlowpokeTestCase(FlaskIntegrationTestCase(app, db)):
         mutantcornholio.download_scrobbles = True
         mutantcornholio.twitter_username = "mutantcornholio"
         mutantcornholio.twitter_data = {"id": 2}
-        mutantcornholio.twitter_artist_races_min_count = 250
         mutantcornholio.twitter_win_artist_races = True
         mutantcornholio.twitter_lose_artist_races = True
         db.session.add(mutantcornholio)
@@ -308,7 +304,6 @@ class SlowpokeTestCase(FlaskIntegrationTestCase(app, db)):
         themylogin.download_scrobbles = True
         themylogin.twitter_username = "themylogin"
         themylogin.twitter_data = {"id": 1}
-        themylogin.twitter_artist_races_min_count = 250
         themylogin.twitter_win_artist_races = True
         themylogin.twitter_lose_artist_races = True
         db.session.add(themylogin)
@@ -317,7 +312,6 @@ class SlowpokeTestCase(FlaskIntegrationTestCase(app, db)):
         mutantcornholio.download_scrobbles = True
         mutantcornholio.twitter_username = "mutantcornholio"
         mutantcornholio.twitter_data = {"id": 2}
-        mutantcornholio.twitter_artist_races_min_count = 250
         mutantcornholio.twitter_win_artist_races = True
         mutantcornholio.twitter_lose_artist_races = True
         db.session.add(mutantcornholio)
@@ -326,7 +320,6 @@ class SlowpokeTestCase(FlaskIntegrationTestCase(app, db)):
         kseniya.download_scrobbles = True
         kseniya.twitter_username = "yaetomogu"
         kseniya.twitter_data = {"id": 3}
-        kseniya.twitter_artist_races_min_count = 250
         kseniya.twitter_win_artist_races = True
         kseniya.twitter_lose_artist_races = True
         db.session.add(kseniya)

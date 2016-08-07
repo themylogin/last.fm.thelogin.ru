@@ -14,16 +14,14 @@ import time
 import urllib
 import urllib2
 
-from themylog.client import setup_logging_handler
 from themyutils.misc import retry
 
 from last_fm.app import app
 from last_fm.db import db
 from last_fm.models import *
 
-setup_logging_handler("last.fm_sync_scrobbles_daemon")
-
 logger = logging.getLogger()
+logging.basicConfig(level=logging.DEBUG)
 
 socket.setdefaulttimeout(10)
 
@@ -229,4 +227,4 @@ if __name__ == "__main__":
     main_loop_thread.daemon = True
     main_loop_thread.start()
 
-    app.run(host="127.0.0.1", port=46400, threaded=True)
+    app.run(host="0.0.0.0", port=80, threaded=True)

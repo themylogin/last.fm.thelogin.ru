@@ -22,9 +22,9 @@ import last_fm.views.login
 import last_fm.views.misc
 import last_fm.views.usercp
 ImageServer(app, os.path.join(app.static_folder, "artists"), allow_internet=True,
-            redis_lock=[{"host": "localhost", "port": 6379, "db": 0}])
+            redis_lock=[{"host": "redis", "port": 6379, "db": 0}])
 ImageServer(app, os.path.join(app.static_folder, "covers"), allow_internet=True,
-            redis_lock=[{"host": "localhost", "port": 6379, "db": 0}])
+            redis_lock=[{"host": "redis", "port": 6379, "db": 0}])
 
 
 @app.context_processor
@@ -35,11 +35,11 @@ def context_processor():
     context["timedelta"] = timedelta
     context["relativedelta"] = relativedelta
 
-    if current_user.is_authenticated():
-        context["current_user_has_gets"] = db.session.query(func.count(Get)).\
+    if current_user.is_authenticated:
+        context["current_user_has_gets"] = db.session.query(func.count(Get.id)).\
                                                       filter(Scrobble.user == current_user).\
                                                       scalar() > 0
-        context["current_user_scrobble_count"] = db.session.query(func.count(Scrobble)).\
+        context["current_user_scrobble_count"] = db.session.query(func.count(Scrobble.id)).\
                                                             filter(Scrobble.user == current_user).\
                                                             scalar()
 
@@ -52,7 +52,7 @@ app.template_filter()(russian_strftime)
 
 @app.after_request
 def update_user_last_visit(response):
-    if current_user.is_authenticated():
+    if current_user.is_authenticated:
         current_user.last_visit = datetime.now()
         db.session.commit()
     return response

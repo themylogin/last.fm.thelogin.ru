@@ -11,6 +11,7 @@ from sqlalchemy.sql import func, literal
 import time
 
 from last_fm.celery import cron
+from last_fm.constants import SIGNIFICANT_ARTIST_SCROBBLES
 from last_fm.db import db
 from last_fm.models import *
 from last_fm.utils.twitter import post_tweet
@@ -40,7 +41,7 @@ class PositiveAnniversaryBuilder(AnniversaryBuilder):
 
         return [user_artist for user_artist in db.session.query(UserArtist).\
                                                           filter(UserArtist.user == user,
-                                                                 UserArtist.scrobbles >= 250,
+                                                                 UserArtist.scrobbles >= SIGNIFICANT_ARTIST_SCROBBLES,
                                                                  anniversary_condition)
                 if db.session.query(func.max(Scrobble.uts)).\
                               filter(Scrobble.user == user_artist.user,
@@ -81,7 +82,7 @@ class NegativeAnniversaryBuilder(AnniversaryBuilder):
                                                                (scrobble_alias.user_id == UserArtist.user_id) &
                                                                (scrobble_alias.artist == Artist.name)).\
                                                           filter(UserArtist.user == user,
-                                                                 UserArtist.scrobbles >= 250).\
+                                                                 UserArtist.scrobbles >= SIGNIFICANT_ARTIST_SCROBBLES).\
                                                           having(anniversary_condition).\
                                                           group_by(UserArtist.id)]
 

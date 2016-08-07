@@ -8,6 +8,7 @@ from flask.ext.security import current_user, login_required
 from last_fm.analytics import find_day2scrobbles, find_day2scrobbles_gaps, find_first_scrobble_by_first_scrobble_appx
 from last_fm.app import app
 from last_fm.cache import cache
+from last_fm.constants import SIGNIFICANT_ARTIST_SCROBBLES
 from last_fm.db import db
 from last_fm.models import *
 
@@ -27,7 +28,7 @@ def first_real_scrobble_corrected():
 
     artist = db.session.query(UserArtist).\
                         filter(UserArtist.user == current_user,
-                               UserArtist.scrobbles >= 250,
+                               UserArtist.scrobbles >= SIGNIFICANT_ARTIST_SCROBBLES,
                                UserArtist.first_real_scrobble != None,
                                UserArtist.first_real_scrobble_corrected == None).\
                         order_by(UserArtist.scrobbles.desc()).\

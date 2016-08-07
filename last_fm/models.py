@@ -1,11 +1,10 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, division, unicode_literals
 
+from citext import CIText
 from datetime import datetime
 from flask.ext.login import UserMixin
-import json
-
-from themyutils.sqlalchemy.types import MySqlPickleType
+from sqlalchemy.dialects.postgresql import JSONB
 
 from last_fm.db import db
 
@@ -23,10 +22,10 @@ class User(db.Model, UserMixin):
     id                          = db.Column(db.Integer, primary_key=True)    
     username                    = db.Column(db.String(32), unique=True)
     session_key                 = db.Column(db.String(32))
-    data                        = db.Column(db.PickleType(pickler=json))
+    data                        = db.Column(JSONB())
     data_updated                = db.Column(db.DateTime)
 
-    devices                     = db.Column(db.PickleType(pickler=json), default=list)
+    devices                     = db.Column(JSONB(), default=list)
     auto_add_devices            = db.Column(db.Boolean, default=True)
 
     registration                = db.Column(db.DateTime, default=datetime.now, nullable=True)
@@ -39,7 +38,7 @@ class User(db.Model, UserMixin):
     hates_me                    = db.Column(db.Boolean, index=True, default=False)
 
     twitter_username            = db.Column(db.String(32))
-    twitter_data                = db.Column(db.PickleType(pickler=json))
+    twitter_data                = db.Column(JSONB())
     twitter_data_updated        = db.Column(db.DateTime)
     twitter_oauth_token         = db.Column(db.String(64))
     twitter_oauth_token_secret  = db.Column(db.String(64))
@@ -51,21 +50,19 @@ class User(db.Model, UserMixin):
 
     twitter_track_gets          = db.Column(db.Boolean, default=False)
 
-    twitter_track_chart_milestones = db.Column(db.Boolean, default=False)
-    twitter_track_artist_milestones = db.Column(db.Boolean, default=False)
+    twitter_track_chart_milestones      = db.Column(db.Boolean, default=False)
+    twitter_track_artist_milestones     = db.Column(db.Boolean, default=False)
 
-    twitter_track_artist_anniversaries              = db.Column(db.Boolean, default=False)
-    twitter_track_artist_anniversaries_min_count    = db.Column(db.Integer, default=250)
+    twitter_track_artist_anniversaries  = db.Column(db.Boolean, default=False)
 
-    twitter_win_artist_races        = db.Column(db.Boolean, default=False)
-    twitter_artist_races_min_count  = db.Column(db.Integer, default=250)
-    twitter_lose_artist_races       = db.Column(db.Boolean, default=True)
+    twitter_win_artist_races            = db.Column(db.Boolean, default=False)
+    twitter_lose_artist_races           = db.Column(db.Boolean, default=True)
 
 
 class Scrobble(db.Model):
     id              = db.Column(db.Integer, primary_key=True)
     user_id         = db.Column(db.Integer, db.ForeignKey("user.id"))
-    artist          = db.Column(db.String(255), index=True)
+    artist          = db.Column(CIText(), index=True)
     album           = db.Column(db.String(255), index=True)
     track           = db.Column(db.String(255), index=True)
     uts             = db.Column(db.Integer, index=True)
@@ -91,10 +88,13 @@ class Scrobble(db.Model):
                                                               "(ApproximateTrackLength.track == Scrobble.track)",
                                                   foreign_keys=[artist, track])
 
+    __table_args__      = (db.Index("ix__scrobble__user_id__artist", "user_id", "artist"),
+                           db.Index("ix__scrobble__user_id__artist__uts", "user_id", "artist", "uts"),)
+
 
 class Artist(db.Model):
     id                  = db.Column(db.Integer, primary_key=True)
-    name                = db.Column(db.String(255), nullable=False, unique=True)
+    name                = db.Column(CIText(), nullable=False, unique=True)
 
 
 class ArtistImage(db.Model):
@@ -199,9 +199,9 @@ class GuestVisit(db.Model):
     id              = db.Column(db.Integer, primary_key=True)
     user_id         = db.Column(db.Integer, db.ForeignKey("user.id"))
     came            = db.Column(db.DateTime)
-    came_data       = db.Column(db.PickleType(pickler=json))
+    came_data       = db.Column(JSONB())
     left            = db.Column(db.DateTime)
-    left_data       = db.Column(db.PickleType(pickler=json))
+    left_data       = db.Column(JSONB())
 
     user            = db.relationship("User", foreign_keys=[user_id])
 
@@ -248,7 +248,7 @@ class DashboardData(db.Model):
     id              = db.Column(db.Integer, primary_key=True)
     type            = db.Column(db.String(length=255))
     key             = db.Column(db.String(length=255))
-    value           = db.Column(MySqlPickleType(pickler=json))
+    value           = db.Column(JSONB())
     date            = db.Column(db.Date)
 
 ###

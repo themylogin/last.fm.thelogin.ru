@@ -23,6 +23,7 @@ from themyutils.itertools import unique_items
 
 from last_fm.app import app
 from last_fm.cache import cache
+from last_fm.constants import SIGNIFICANT_ARTIST_SCROBBLES
 from last_fm.db import db
 from last_fm.models import *
 
@@ -560,7 +561,7 @@ def analytics_hitparade():
                             [
                                 (track, scrobbles, length, scrobbles * length, first_scrobble, last_scrobble)
                                 for track, scrobbles, first_scrobble, last_scrobble, length in
-                                [(request.form.getlist("track")[i].replace(artist + " - ", ""),) + db.session.query(func.count(Scrobble), func.min(Scrobble.uts), func.max(Scrobble.uts)).filter(
+                                [(request.form.getlist("track")[i].replace(artist + " - ", ""),) + db.session.query(func.count(Scrobble.id), func.min(Scrobble.uts), func.max(Scrobble.uts)).filter(
                                     Scrobble.user_id == user.id,
                                     Scrobble.artist == artist,
                                     Scrobble.track == request.form.getlist("track")[i].replace(artist + " - ", ""),
@@ -882,7 +883,7 @@ def analytics_battle_map():
                                        filter(Artist.id.in_(db.session.query(UserArtist.artist_id).\
                                                                        filter(UserArtist.user_id.in_([u.id
                                                                                                       for u in users]),
-                                                                              UserArtist.scrobbles > 250)))))
+                                                                              UserArtist.scrobbles > SIGNIFICANT_ARTIST_SCROBBLES)))))
 
     artists_scrobbles = dict(map(lambda (artist_id, count): (artists_dict[artist_id], int(count)),
                                  db.session.query(UserArtist.artist_id, func.sum(UserArtist.scrobbles)).\
@@ -1030,10 +1031,10 @@ def analytics_curve_fit():
     for artist, in db.session.query(Scrobble.artist).\
                               filter(Scrobble.user == user).\
                               group_by(Scrobble.artist).\
-                              having(func.count(Scrobble.id) >= 250).\
+                              having(func.count(Scrobble.id) >= SIGNIFICANT_ARTIST_SCROBBLES).\
                               order_by(func.count(Scrobble.id).desc()):
         year2scrobbles = defaultdict(lambda: 0, db.session.execute("""
-            SELECT YEAR(FROM_UNIXTIME(scrobble.uts)) AS y,
+            SELECT EXTRACT(YEAR FROM TO_TIMESTAMP(scrobble.uts))) AS y,
                    COUNT(*)
             FROM scrobble
             WHERE user_id = :user_id AND artist = :artist

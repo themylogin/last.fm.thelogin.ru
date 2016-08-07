@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 if app.config.get("GUESTS_DEVICES_RESOLVER"):
     def update_user_devices_for_local_request():
-        if current_user.is_authenticated():
+        if current_user.is_authenticated:
             if current_user.auto_add_devices:
                 if any(request.remote_addr.startswith(prefix)
                        for prefix in app.config["GUESTS_DEVICES_PREFIXES"]):

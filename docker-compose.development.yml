@@ -1,0 +1,19 @@
+version: "2"
+
+services:
+  uwsgi:
+    command: >
+      sh -cex "
+        cd /last_fm;
+        /virtualenv/bin/python -m last_fm runserver -d -r -h 0.0.0.0 -p 80;
+      "
+    volumes:
+      - ./virtualenv:/virtualenv
+      - ./:/last_fm
+
+  nginx:
+    command: >
+      sh -cex "
+        sed -i.bak 's/uwsgi_pass unix:\/var\/run\/last_fm\/uwsgi\.socket/proxy_pass http:\/\/uwsgi/g' /etc/nginx/conf.d/default.conf;
+        nginx -g 'daemon off;';
+      "

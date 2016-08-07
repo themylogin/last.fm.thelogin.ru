@@ -4,9 +4,11 @@ from __future__ import absolute_import, division, unicode_literals
 import twitter
 
 from themyutils.pprint import pprint
-import twitter_overkill
+from twitter_overkill.client import TwitterOverkill
 
 from last_fm.app import app
+
+twitter_overkill = TwitterOverkill("http://twitter-overkill")
 
 
 def get_api_for_user(user):

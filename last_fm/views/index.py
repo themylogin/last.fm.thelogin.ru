@@ -40,7 +40,7 @@ def get_release_html(release):
 
 @app.route("/")
 def index():
-    if current_user.is_authenticated():
+    if current_user.is_authenticated:
         return render_template("index.html", releases=get_releases_for(current_user),
                                              get_release_html=get_release_html)
     else:
