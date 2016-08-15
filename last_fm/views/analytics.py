@@ -10,11 +10,10 @@ import itertools
 import math
 import numpy
 import operator
-import pytils
 from Queue import Queue
 from scipy.optimize import curve_fit
-from sqlalchemy.orm import aliased, joinedload
-from sqlalchemy.sql import distinct, func, literal_column, operators
+from sqlalchemy.sql import distinct, func, literal_column
+from sqlalchemy.dialects.postgresql import ARRAY, VARCHAR
 import time
 
 from themyutils.collections import KeyTransformDict
@@ -76,7 +75,9 @@ def uts_for_date(s):
 
 @app.route("/analytics")
 def analytics():
-    return render_template("analytics/index.html", users=db.session.query(User).filter(User.download_scrobbles==True).order_by(User.username))
+    return render_template("analytics/index.html", users=(db.session.query(User).
+                                                                filter(User.download_scrobbles == True).
+                                                                order_by(func.lower(User.username))))
 
 
 @app.route("/analytics/fight")
@@ -208,7 +209,7 @@ def analytics_recommendations():
     table_header = ["Исполнитель", "Друзья", "Друзей", "Прослушиваний"]
     table_body = db.session.query(
         func.concat('<a href="http://last.fm/music/', Scrobble.artist, '">', Scrobble.artist, '</a>'),
-        func.group_concat(distinct(User.username).op("SEPARATOR")(literal_column('", "'))),
+        func.array_to_string(func.array_agg(distinct(User.username), type_=ARRAY(VARCHAR)), ", "),
         func.count(distinct(User.username)),
         func.count(Scrobble.id)
     ).\
@@ -442,8 +443,8 @@ def analytics_hitparade():
     year_start_uts = time.mktime(datetime(year=year, month=1, day=1).timetuple())
     year_end_uts = time.mktime(datetime(year=year, month=12, day=31, hour=23, minute=59, second=59).timetuple())
 
-    track_albums_raw = func.group_concat(distinct(Scrobble.album).op("SEPARATOR")(literal_column('"@@@@@@"')))
-    track_albums = lambda track_albums_raw: sorted(filter(None, track_albums_raw.split("@@@@@@")))
+    track_albums_raw = func.array_agg(distinct(Scrobble.album), type_=ARRAY(VARCHAR))
+    track_albums = lambda track_albums_raw: sorted(filter(None, track_albums_raw))
 
     if request.method != "POST":
         return render_template("analytics/hitparade.html", **{
@@ -452,7 +453,7 @@ def analytics_hitparade():
             "step"          : 1,
             "year"          : year,
             "artists"       : [
-                                  (artist, scrobble_count, [(track, track_albums(albums_raw))
+                                  (artist, scrobble_count, [(track, albums_raw)
                                                             for track, albums_raw in db.session.query(
                                                                                                     Scrobble.track,
                                                                                                     track_albums_raw
@@ -1034,7 +1035,7 @@ def analytics_curve_fit():
                               having(func.count(Scrobble.id) >= SIGNIFICANT_ARTIST_SCROBBLES).\
                               order_by(func.count(Scrobble.id).desc()):
         year2scrobbles = defaultdict(lambda: 0, db.session.execute("""
-            SELECT EXTRACT(YEAR FROM TO_TIMESTAMP(scrobble.uts))) AS y,
+            SELECT EXTRACT(YEAR FROM TO_TIMESTAMP(scrobble.uts))::integer AS y,
                    COUNT(*)
             FROM scrobble
             WHERE user_id = :user_id AND artist = :artist
