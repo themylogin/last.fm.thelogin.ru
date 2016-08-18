@@ -2,6 +2,7 @@
 from __future__ import absolute_import, division, unicode_literals
 
 from flask import *
+import ipaddress
 import logging
 import traceback
 
@@ -13,7 +14,10 @@ logger = logging.getLogger(__name__)
 
 @app.route("/api/sql", methods=["POST"])
 def sql():
-    if request.remote_addr not in app.config["SQL_API_CLIENTS"]:
+    if not any(((ipaddress.ip_address(request.remote_addr.decode("ascii")) in ipaddress.ip_network(addr.decode("ascii")))
+                if "/" in addr
+                else (request.remote_addr == addr))
+               for addr in app.config["SQL_API_CLIENTS"]):
         abort(403)
 
     try:

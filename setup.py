@@ -21,6 +21,7 @@ setup(
         "gevent==1.1.2",
         "gevent-websocket==0.9.5",
         "gunicorn==19.6.0",
+        "ipaddress==1.0.16",
         "jinja2-pluralize-filter==0.0.2",
         "lxml==3.6.1",
         "numpy==1.11.1",
