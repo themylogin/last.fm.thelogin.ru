@@ -20,5 +20,4 @@ def sql():
         return Response(json.dumps(map(dict, db.session.execute(request.json["query"], request.json["params"]))),
                         content_type="application/json")
     except:
-        print traceback.format_exc()
         return Response(traceback.format_exc(), status=400, content_type="text/plain")
