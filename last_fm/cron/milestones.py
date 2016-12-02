@@ -130,7 +130,7 @@ def tweet_milestones():
         try:
             user2twitter_friends[user] = get_api_for_user(user).GetFriendIDs(screen_name=user.twitter_username)
             return user2twitter_friends[user]
-        except twitter.TwitterError:
+        except Exception:
             logger.debug("Unable to GetFriendIDs for %s", user.twitter_username, exc_info=True)
             return []
     for winner in artist_races_users:
