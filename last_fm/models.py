@@ -3,7 +3,7 @@ from __future__ import absolute_import, division, unicode_literals
 
 from citext import CIText
 from datetime import datetime
-from flask.ext.login import UserMixin
+from flask_login import UserMixin
 from sqlalchemy.dialects.postgresql import JSONB
 
 from last_fm.db import db
@@ -268,7 +268,8 @@ class Event(db.Model):
 
 event_artist = db.Table("event_artist",
     db.Column("event_id", db.Integer, db.ForeignKey("event.id")),
-    db.Column("artist_id", db.Integer, db.ForeignKey("artist.id"))
+    db.Column("artist_id", db.Integer, db.ForeignKey("artist.id")),
+    db.Index("ix__event_artist__event_id", "event_id"),
 )
 
 ###
