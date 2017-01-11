@@ -1,21 +1,22 @@
 FROM ubuntu:16.04
 
-RUN apt-get update
-
-RUN apt-get -y install python \
+RUN apt-get update && \
+    apt-get -y install python \
                        python-dev \
+                       python-numpy \
+                       python-scipy \
                        python-pip \
-                       python-virtualenv
-    
-RUN apt-get -y install libjpeg-dev \
+                       python-virtualenv \
+                       libjpeg-dev \
                        libpng-dev \
                        libpq-dev \
                        libxml2-dev \
                        libxslt-dev
 
-RUN python -m virtualenv --python=python /virtualenv
+RUN python -m virtualenv --python=python --system-site-packages /virtualenv
 
-RUN /virtualenv/bin/pip install uwsgi
+ADD requirements.txt /requirements.txt
+RUN /virtualenv/bin/pip install -r /requirements.txt
 
 RUN mkdir /last_fm
 RUN mkdir /last_fm/last_fm
@@ -23,9 +24,6 @@ RUN touch /last_fm/last_fm/__init__.py
 ADD setup.py /last_fm/setup.py
 
 WORKDIR /last_fm
-RUN /virtualenv/bin/pip install Flask==0.11.1
-RUN /virtualenv/bin/pip install numpy==1.11.1
-RUN /virtualenv/bin/pip install scipy==0.18.0
 RUN /virtualenv/bin/python setup.py develop
 
 RUN rm -rf /last_fm/last_fm
