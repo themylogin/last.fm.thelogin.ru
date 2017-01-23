@@ -22,8 +22,8 @@ services:
       - twitteroverkill_default
     restart: always
     volumes:
-      - ./last_fm/static/artists:/last_fm/static/artists
-      - ./last_fm/static/covers:/last_fm/static/covers
+      - "$STATIC_DATA_PATH/artists:/last_fm/last_fm/static/artists"
+      - "$STATIC_DATA_PATH/covers:/last_fm/last_fm/static/covers"
       - /var/run/last_fm
 
   gunicorn:

@@ -54,7 +54,8 @@ def gets():
     for get in gets:
         bbcode += "[quote]%dth track: (%s)\n" % (get.get, get.datetime.strftime("%d %b %Y"))
         bbcode += "[artist]%s[/artist] - [track artist=%s]%s[/track]" % (get.artist, get.artist, get.track)
-        bbcode += "[img]%s[/img][/quote]" % (get.artist_image.replace("/_/", "/252/"))
+        if get.artist_image:
+            bbcode += "[img]%s[/img][/quote]" % (get.artist_image.replace("/_/", "/252/"))
     bbcode += "[color=navy]Generated on %s[/color]\n" % datetime.now().strftime("%d %b %Y")
     bbcode += "[color=navy]Get yours [b][url=http://kastuvas.us.to/lastfm/]here[/url][/b][/color][/quote][/color][/b][/quote][/align]"
 
