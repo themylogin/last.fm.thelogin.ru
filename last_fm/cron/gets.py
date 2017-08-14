@@ -40,8 +40,8 @@ def tweet_gets():
                                                           "http://www.last.fm/ru/user/%s" % user.username
                                                       ).text
                                                   ).\
-                                                  find("div", "header-metadata-global-stats").\
-                                                  find("td", "metadata-display").\
+                                                  find("li", "header-metadata-item--scrobbles").\
+                                                  find("p", "header-metadata-display").\
                                                   text))
                 except Exception:
                     logger.error("Synchronizing error", exc_info=True)
