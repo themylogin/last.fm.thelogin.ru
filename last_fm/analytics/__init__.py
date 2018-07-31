@@ -13,11 +13,11 @@ __all__ = [b"find_day2scrobbles", b"find_day2scrobbles_gaps", b"find_first_scrob
 
 def find_day2scrobbles(user, artist):
     day2scrobbles = OrderedDict([(day, 0)
-                                 for day in range(int(db.session.query(func.min(Scrobble.uts)).\
+                                 for day in range(int(db.session.query(func.coalesce(func.min(Scrobble.uts), 0)).\
                                                                  filter(Scrobble.user == user,
                                                                         Scrobble.artist == artist).\
                                                                  scalar() / 86400),
-                                                  int(db.session.query(func.max(Scrobble.uts)).\
+                                                  int(db.session.query(func.coalesce(func.max(Scrobble.uts), 0)).\
                                                                  filter(Scrobble.user == user,
                                                                         Scrobble.artist == artist).\
                                                                  scalar() / 86400) + 1)])

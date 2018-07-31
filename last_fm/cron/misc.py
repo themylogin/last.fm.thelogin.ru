@@ -236,7 +236,10 @@ def calculate_first_real_scrobbles():
     for user_artist in db.session.query(UserArtist).\
                                   filter(UserArtist.first_scrobble <= time.time() - 360 * 86400,
                                          UserArtist.first_real_scrobble == None):
-        user_artist.first_real_scrobble = calculate_first_real_scrobble(user_artist.user,
-                                                                        user_artist.artist.name).uts
+        frs = calculate_first_real_scrobble(user_artist.user, user_artist.artist.name)
+        if frs:
+            user_artist.first_real_scrobble = frs.uts
+        else:
+            db.session.delete(user_artist)
 
     db.session.commit()
