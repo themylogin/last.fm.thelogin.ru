@@ -153,6 +153,7 @@ def tweet_milestones():
                                     winner.twitter_username,
                                     artist,
                                 ))
+                    """
                     # slowpoke
                     for artist_id in user2artist2scrobbles[winner]["now"]:
                         artist = get_artist_name(artist_id)
@@ -218,6 +219,7 @@ def tweet_milestones():
                                     text,
                                     artist,
                                 ))
+                    """
 
     db.session.commit()
 
