@@ -42,7 +42,7 @@ oauthlib==1.1.2
 passlib==1.6.5
 Pillow==3.2.0
 psycopg2==2.6.1
-pylast==1.6.0
+pylast==2.3.0
 PyRSS2Gen==1.1
 python-dateutil==2.5.3
 python-editor==1.0.1
@@ -54,7 +54,7 @@ redis==2.10.5
 redlock==1.2.0
 requests==2.12.4
 requests-oauthlib==0.6.2
-six==1.10.0
+six==1.11.0
 SQLAlchemy==1.1.0b3
 sqlalchemy-citext==1.3.post0
 statistics==1.0.3.5

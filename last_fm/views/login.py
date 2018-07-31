@@ -25,22 +25,22 @@ def login():
 
 @app.route("/login/callback")
 def login_callback():
-    session_key_generator = pylast.SessionKeyGenerator(network)
-    session_key_generator.web_auth_tokens["fake"] = request.args.get("token")
-    session_key = session_key_generator.get_web_auth_session_key("fake")
+    req = pylast._Request(network, "auth.getSession", {"token": request.args.get("token")})
+    req.sign_it()
+    doc = req.execute()
+    session_key = doc.getElementsByTagName("key")[0].firstChild.data
+    username = doc.getElementsByTagName("name")[0].firstChild.data
 
-    last_fm_user = get_network(session_key=session_key).get_authenticated_user()
-
-    user = db.session.query(User).filter_by(username=last_fm_user.get_name()).first()
+    user = db.session.query(User).filter_by(username=username).first()
     if user is None:
         user = User()
-        user.username = last_fm_user.get_name()
+        user.username = username
         
         db.session.add(user)
 
     user.session_key = session_key
     
-    user.data = get_user_data(last_fm_user)
+    user.data = get_user_data(get_network(session_key=session_key, username=username).get_authenticated_user())
     user.data_updated = datetime.now()
     
     db.session.commit()
