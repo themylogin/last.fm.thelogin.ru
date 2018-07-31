@@ -42,8 +42,4 @@ setup(
         "twitter-overkill[client]",
         "whatapi",
     ],
-    dependency_links=[
-        "https://github.com/themylogin/themyutils/zipball/master#egg=themyutils",
-        "https://github.com/themylogin/twitter-overkill/zipball/master#egg=twitter-overkill",
-    ]
 )

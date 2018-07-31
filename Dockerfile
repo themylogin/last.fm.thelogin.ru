@@ -24,6 +24,8 @@ RUN touch /last_fm/last_fm/__init__.py
 ADD setup.py /last_fm/setup.py
 
 WORKDIR /last_fm
+RUN /virtualenv/bin/pip install "https://github.com/themylogin/themyutils/zipball/master#egg=themyutils"
+RUN /virtualenv/bin/pip install "https://github.com/themylogin/twitter-overkill/zipball/master#egg=twitter-overkill"
 RUN /virtualenv/bin/python setup.py develop
 
 RUN rm -rf /last_fm/last_fm
