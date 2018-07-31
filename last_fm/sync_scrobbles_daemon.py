@@ -189,6 +189,7 @@ def main_loop():
             users = db.create_scoped_session().query(User).filter(User.download_scrobbles == True).all()
         except Exception as e:
             logger.debug("Failed to query users", exc_info=True)
+            continue
 
         for user in users:
             try:
