@@ -49,9 +49,9 @@ def update_releases():
 
 
 def find_releases(feed):
-    if feed.url == "apollo.rip":
+    if feed.url == "orpheus.network":
         api = whatapi.WhatAPI(username=app.config["WHAT_CD_USERNAME"], password=app.config["WHAT_CD_PASSWORD"],
-                              server="https://apollo.rip")
+                              server="https://orpheus.network")
         h = HTMLParser.HTMLParser()
         for group in api.request("browse", searchstr="")["response"]["results"]:
             if "torrents" not in group:
@@ -62,7 +62,7 @@ def find_releases(feed):
                 continue
 
             release = Release()
-            release.url = "https://apollo.rip/torrents.php?id=%d" % group["groupId"]
+            release.url = "https://orpheus.network/torrents.php?id=%d" % group["groupId"]
             release.title = h.unescape(" - ".join(filter(None, [group.get(k) for k in ("artist", "groupName")])))
             if group.get("groupYear"):
                 release.title += " (%d)" % group.get("groupYear")
