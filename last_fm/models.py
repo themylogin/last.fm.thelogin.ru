@@ -63,8 +63,8 @@ class Scrobble(db.Model):
     id              = db.Column(db.Integer, primary_key=True)
     user_id         = db.Column(db.Integer, db.ForeignKey("user.id"))
     artist          = db.Column(CIText(), index=True)
-    album           = db.Column(db.String(255), index=True)
-    track           = db.Column(db.String(255), index=True)
+    album           = db.Column(CIText(), index=True)
+    track           = db.Column(CIText(), index=True)
     uts             = db.Column(db.Integer, index=True)
 
     @property
