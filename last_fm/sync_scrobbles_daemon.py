@@ -19,6 +19,7 @@ from themyutils.misc import retry
 from last_fm.app import app
 from last_fm.db import db
 from last_fm.models import *
+from last_fm.redis import redis
 
 logger = logging.getLogger()
 logging.basicConfig(level=logging.DEBUG)
@@ -68,18 +69,27 @@ def update_scrobbles(user, asap=False):
                                     filter(Scrobble.user == user).\
                                     first()
 
+        error_since_key = "sync_scrobbles_daemon:user:{}:error_since".format(user.id)
+        error_since = redis.get(error_since_key)
+        if error_since is not None:
+            error_since = int(error_since.decode())
+        is_acceptable_error = error_since is not None and error_since < time.time() - 7 * 86400
+
         delete_after = None
         if total_db_scrobbles > 0:
             download_from = last_scrobble_uts + 1
 
             if not asap:
                 total_xml_scrobbles = count_xml_scrobbles(user, to=last_scrobble_uts + 1)
-                if total_xml_scrobbles < total_db_scrobbles - 10:
+                if total_xml_scrobbles < total_db_scrobbles - 10 and not is_acceptable_error:
                     logger.warning("User %s scrobble count decreased (%d -> %d), possible remote database corruption. "
-                                   "Not removing", user.username, total_db_scrobbles, total_xml_scrobbles)
+                                   "Error since %s. Not removing", user.username, total_db_scrobbles,
+                                   total_xml_scrobbles, format_uts(error_since) if error_since is not None else None)
+                    redis.setnx(error_since_key, str(int(time.time())))
                 elif total_xml_scrobbles != total_db_scrobbles:
-                    logger.debug("User %s is not okay (has %d tracks, should have %d by %s)",
-                                 user.username, total_db_scrobbles, total_xml_scrobbles, format_uts(last_scrobble_uts))
+                    logger.debug("User %s is not okay (has %d tracks, should have %d by %s), error since %s",
+                                 user.username, total_db_scrobbles, total_xml_scrobbles, format_uts(last_scrobble_uts),
+                                 format_uts(error_since) if error_since is not None else None)
 
                     left = first_scrobble_uts
                     right = last_scrobble_uts
@@ -144,6 +154,7 @@ def update_scrobbles(user, asap=False):
                                    Scrobble.uts >= delete_after).\
                             delete()
             logger.info("Deleted %d scrobbles for %s", count, user.username)
+            redis.delete(error_since_key)
 
         for xml_scrobble in reversed(scrobbles):
             session.execute(Scrobble.__table__.insert().values(

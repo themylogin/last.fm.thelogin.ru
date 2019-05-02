@@ -18,13 +18,13 @@ from last_fm.celery import celery
 from last_fm.db import db
 from last_fm.login_manager import login_manager
 from last_fm.models import *
+from last_fm.redis import redis
 
 socket.setdefaulttimeout(10)
 
 Bootstrap(app)
 login_manager.init_app(app)
-app.session_interface = RedisSessionInterface(redis=Redis(host="redis"),
-                                              prefix="last.fm:session:")
+app.session_interface = RedisSessionInterface(redis=redis, prefix="last.fm:session:")
 
 runner = sys.argv[0].split("/")[-1]
 if runner in ["celery", "gunicorn", "uwsgi"]:
