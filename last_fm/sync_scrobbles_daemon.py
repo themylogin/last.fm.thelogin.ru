@@ -197,7 +197,8 @@ def main_loop():
         update_started_at = time.time()
 
         try:
-            users = db.create_scoped_session().query(User).filter(User.download_scrobbles == True).all()
+            users = db.create_scoped_session().query(User).filter(User.download_scrobbles == True,
+                                                                  User.really_download_scrobbles == True).all()
         except Exception as e:
             logger.debug("Failed to query users", exc_info=True)
             continue

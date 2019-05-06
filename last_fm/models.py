@@ -33,6 +33,7 @@ class User(db.Model, UserMixin):
     last_library_update         = db.Column(db.DateTime, nullable=True)
 
     download_scrobbles          = db.Column(db.Boolean, index=True, default=False)
+    really_download_scrobbles   = db.Column(db.Boolean, index=True, default=False)
     build_releases              = db.Column(db.Boolean, index=True, default=True)
     cheater                     = db.Column(db.Boolean, index=True, default=False)
     hates_me                    = db.Column(db.Boolean, index=True, default=False)
