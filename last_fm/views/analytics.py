@@ -13,6 +13,7 @@ import operator
 from Queue import Queue
 from scipy.optimize import curve_fit
 from sqlalchemy.sql import distinct, func, literal_column
+from sqlalchemy.types import Integer
 from sqlalchemy.dialects.postgresql import ARRAY, TEXT
 import time
 
@@ -1090,3 +1091,29 @@ def analytics_curve_fit():
                                          for x in xdata], [])})
 
     return {"artists": json.dumps(artists), "user": user}
+
+
+@app.route("/analytics/by_month")
+@cached_analytics_view
+def analytics_by_month():
+    user = db.session.query(User).get(request.args.get("user", type=int))
+
+    year = func.cast(func.extract("year", func.to_timestamp(Scrobble.uts)), Integer)
+    month = func.cast(func.extract("month", func.to_timestamp(Scrobble.uts)), Integer)
+    day = func.cast(func.extract("day", func.to_timestamp(Scrobble.uts)), Integer)
+
+    by_month = list(
+        db.session.query(func.count(Scrobble.id), year, month).
+            filter(Scrobble.user == user).
+            group_by(year, month).
+            order_by(year, month)
+    )
+    by_day = list(
+        db.session.query(func.count(Scrobble.id), year, month, day).
+            filter(Scrobble.user == user).
+            group_by(year, month, day).
+            order_by(func.count(Scrobble.id).desc()).
+            limit(100)
+    )
+
+    return {"by_month": json.dumps(by_month), "by_day": json.dumps(by_day), "user": user}

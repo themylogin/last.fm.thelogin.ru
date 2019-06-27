@@ -6,7 +6,6 @@ services:
     command: >
       sh -cex "
         cd /last_fm;
-        /virtualenv/bin/alembic upgrade head;
         exec /virtualenv/bin/uwsgi --master --module last_fm:app --processes 5 --enable-threads --chmod-socket=666 --socket /var/run/last_fm/uwsgi.socket;
       "
     env_file: .env
@@ -24,6 +23,7 @@ services:
     volumes:
       - "$STATIC_DATA_PATH/artists:/last_fm/last_fm/static/artists"
       - "$STATIC_DATA_PATH/covers:/last_fm/last_fm/static/covers"
+      - /run/mpd/socket:/run/mpd/socket
       - /var/run/last_fm
 
   gunicorn:

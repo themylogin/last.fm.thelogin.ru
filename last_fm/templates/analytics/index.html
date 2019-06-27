@@ -217,4 +217,8 @@
     {% call form("curve_fit", "scipy.optimize.curve_fit", "по всем элементарным функциям", "Science, bitch!") %}
         {{ select_user(title="Пользователь") }}
     {% endcall %}
+
+    {% call form("by_month", "Вылечился", "количество прослушиваний по месяцам разных лет", "Проверить, была ли уже депрессия") %}
+        {{ select_user() }}
+    {% endcall %}
 {% endblock %}

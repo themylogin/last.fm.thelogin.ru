@@ -5,6 +5,7 @@ from collections import defaultdict, OrderedDict
 from datetime import datetime, timedelta
 import itertools
 import logging
+import mpd
 from sqlalchemy.sql import func, literal_column
 import time
 
@@ -12,6 +13,7 @@ from last_fm.analytics import calculate_first_real_scrobble
 from last_fm.celery import cron
 from last_fm.db import db
 from last_fm.models import *
+from last_fm.utils.mpd import get_mpd
 from last_fm.utils.string import streq
 
 logger = logging.getLogger(__name__)
@@ -135,9 +137,9 @@ def calculate_approximate_track_lengths():
                 lengths = this_intervals.values()[0]
                 #print "FALLING BACK"
 
-            length = sum(lengths) / len(lengths)
-            stat_length = length
+            stat_length = sum(lengths) / len(lengths)
             real_length = None
+            length = stat_length if len(lengths) > 2 and stat_length < 1200 else 240
 
             try:
                 result = list(client.search("title", track.encode("utf-8")))

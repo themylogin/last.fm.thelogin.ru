@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+
+{% block title_part %}Количество прослушиваний по месяцам и дням - Статистика{% endblock %}
+
+{% block container %}
+    <h2>{{ user.username }}</h2>
+
+    <div id="chart_1" style="width: 100%; height: 500px;"></div>
+    <div id="chart_2" style="width: 100%; height: 500px;"></div>
+{% endblock %}
+
+{% block scripts %}
+    {{ super() }}
+
+    <script type="text/javascript" src="https://www.google.com/jsapi"></script>
+    <script type="text/javascript">
+      google.load("visualization", "1", {packages:["corechart", "bar"]});
+      google.setOnLoadCallback(drawChart);
+      function drawChart() {
+        drawChart1();
+        drawChart2();
+      }
+      function drawChart1() {
+
+      var by_month = {{ by_month|safe }};
+
+      var data = google.visualization.arrayToDataTable([['Дата', 'Прослушиваний']].concat(by_month.map(function(v) {
+        return [v[1].toString() + "-" + v[2].toString(), v[0]];
+      })));
+
+      var options = {
+        title: 'Количество прослушиваний по месяцам',
+        chartArea: {width: '50%'},
+        hAxis: {
+          title: 'Количество прослушиваний',
+          minValue: 0,
+          textStyle: {
+            bold: true,
+            fontSize: 12,
+            color: '#4d4d4d'
+          },
+          titleTextStyle: {
+            bold: true,
+            fontSize: 18,
+            color: '#4d4d4d'
+          }
+        },
+        vAxis: {
+          title: 'Месяц',
+          textStyle: {
+            fontSize: 14,
+            bold: true,
+            color: '#848484'
+          },
+          titleTextStyle: {
+            fontSize: 14,
+            bold: true,
+            color: '#848484'
+          }
+        }
+      };
+      document.getElementById('chart_1').style.height = (100 + by_month.length * 30) + "px";
+      var chart = new google.visualization.BarChart(document.getElementById('chart_1'));
+      chart.draw(data, options);
+
+      }
+
+      function drawChart2() {
+
+      var by_day = {{ by_day|safe }};
+
+      var data = google.visualization.arrayToDataTable([['Дата', 'Прослушиваний']].concat(by_day.map(function(v) {
+        return [v[1].toString() + "-" + v[2].toString() + "-" + v[3].toString(), v[0]];
+      })));
+
+      var options = {
+        title: 'Количество прослушиваний по дням',
+        chartArea: {width: '50%'},
+        hAxis: {
+          title: 'Количество прослушиваний',
+          minValue: 0,
+          textStyle: {
+            bold: true,
+            fontSize: 12,
+            color: '#4d4d4d'
+          },
+          titleTextStyle: {
+            bold: true,
+            fontSize: 18,
+            color: '#4d4d4d'
+          }
+        },
+        vAxis: {
+          title: 'День',
+          textStyle: {
+            fontSize: 14,
+            bold: true,
+            color: '#848484'
+          },
+          titleTextStyle: {
+            fontSize: 14,
+            bold: true,
+            color: '#848484'
+          }
+        }
+      };
+      document.getElementById('chart_2').style.height = (100 + by_day.length * 30) + "px";
+      var chart = new google.visualization.BarChart(document.getElementById('chart_2'));
+      chart.draw(data, options);
+
+      }
+    </script>
+{% endblock %}
