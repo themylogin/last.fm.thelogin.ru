@@ -13,7 +13,7 @@ import operator
 from Queue import Queue
 from scipy.optimize import curve_fit
 from sqlalchemy.sql import distinct, func, literal_column
-from sqlalchemy.dialects.postgresql import ARRAY, VARCHAR
+from sqlalchemy.dialects.postgresql import ARRAY, TEXT
 import time
 
 from themyutils.collections import KeyTransformDict
@@ -209,7 +209,7 @@ def analytics_recommendations():
     table_header = ["Исполнитель", "Друзья", "Друзей", "Прослушиваний"]
     table_body = db.session.query(
         func.concat('<a href="http://last.fm/music/', Scrobble.artist, '">', Scrobble.artist, '</a>'),
-        func.array_to_string(func.array_agg(distinct(User.username), type_=ARRAY(VARCHAR)), ", "),
+        func.array_to_string(func.array_agg(distinct(User.username), type_=ARRAY(TEXT)), ", "),
         func.count(distinct(User.username)),
         func.count(Scrobble.id)
     ).\
@@ -443,7 +443,7 @@ def analytics_hitparade():
     year_start_uts = time.mktime(datetime(year=year, month=1, day=1).timetuple())
     year_end_uts = time.mktime(datetime(year=year, month=12, day=31, hour=23, minute=59, second=59).timetuple())
 
-    track_albums_raw = func.array_agg(distinct(Scrobble.album), type_=ARRAY(VARCHAR))
+    track_albums_raw = func.array_agg(distinct(Scrobble.album), type=ARRAY(TEXT)).cast(ARRAY(TEXT))
     track_albums = lambda track_albums_raw: sorted(filter(None, track_albums_raw))
 
     if request.method != "POST":
@@ -453,7 +453,7 @@ def analytics_hitparade():
             "step"          : 1,
             "year"          : year,
             "artists"       : [
-                                  (artist, scrobble_count, [(track, albums_raw)
+                                  (artist, scrobble_count, [(track, track_albums(albums_raw))
                                                             for track, albums_raw in db.session.query(
                                                                                                     Scrobble.track,
                                                                                                     track_albums_raw
