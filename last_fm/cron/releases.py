@@ -116,11 +116,20 @@ def update_user_artists():
                 pages = int(xml.artists.get("totalPages"))
 
             for artist in xml.artists.iter("artist"):
-                user_artist = UserArtist()
-                user_artist.user = user
-                user_artist.artist = get_artist(unicode(artist.name))
-                user_artist.scrobbles = int(artist.playcount)
+                db_artist = get_artist(unicode(artist.name))
+                user_artist = (
+                    db.session.query(UserArtist).
+                        filter(UserArtist.user == user,
+                               UserArtist.artist == db_artist).
+                        first()
+                )
+                if user_artist is None:
+                    user_artist = UserArtist()
+                    user_artist.user = user
+                    user_artist.artist = db_artist
+                    user_artist.scrobbles = 0
                 db.session.add(user_artist)
+                user_artist.scrobbles += int(artist.playcount)
 
                 user.last_library_update = datetime.now()
 

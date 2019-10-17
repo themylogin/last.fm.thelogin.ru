@@ -178,8 +178,8 @@ class ApproximateTrackLength(db.Model):
     track lengths with scripts/calculateapproximatetracklengths.py
     """
 
-    artist          = db.Column(db.String(length=255), primary_key=True)
-    track           = db.Column(db.String(length=255), primary_key=True)
+    artist          = db.Column(CIText(), primary_key=True)
+    track           = db.Column(CIText(), primary_key=True)
     length          = db.Column(db.Integer)
 
     stat_length     = db.Column(db.Integer)
