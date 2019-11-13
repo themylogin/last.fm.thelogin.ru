@@ -30,4 +30,3 @@ GUESTS_DEVICES_PREFIXES = os.environ["GUESTS_DEVICES_PREFIXES"].split(",")
 SQL_API_CLIENTS = os.environ["SQL_API_CLIENTS"].split(",")
 
 MPD_HOST = os.environ["MPD_HOST"]
-DEBUG=True

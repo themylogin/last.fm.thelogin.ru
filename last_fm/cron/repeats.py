@@ -118,5 +118,5 @@ def tweet_repeats():
                 pytils.numeral.get_plural(repeat.total, (u"раз", u"раза", u"раз"))
             ))
         else:
-            db.session.remove(repeat)
+            db.session.delete(repeat)
             db.session.commit()
