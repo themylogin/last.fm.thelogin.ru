@@ -24,7 +24,7 @@ services:
       - "$STATIC_DATA_PATH/artists:/last_fm/last_fm/static/artists"
       - "$STATIC_DATA_PATH/covers:/last_fm/last_fm/static/covers"
       - /run/mpd/socket:/run/mpd/socket
-      - /var/run/last_fm
+      - run:/var/run/last_fm
 
   gunicorn:
     build: .
@@ -112,3 +112,4 @@ networks:
 volumes:
   scheduler-data:
   rabbitmq-data:
+  run:
