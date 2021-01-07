@@ -34,7 +34,7 @@ itsdangerous==0.24
 Jinja2==2.8
 jinja2-pluralize-filter==0.0.2
 kombu==3.0.35
-lxml==3.6.1
+lxml==4.6.2
 Mako==1.0.4
 MarkupSafe==0.23
 oauth2==1.9.0.post1
