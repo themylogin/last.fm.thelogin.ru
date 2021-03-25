@@ -11,6 +11,11 @@ services:
       - ./virtualenv:/virtualenv
       - ./:/last_fm
 
+  worker:
+    volumes:
+      - ./virtualenv:/virtualenv
+      - ./:/last_fm
+
   nginx:
     command: >
       sh -cex "

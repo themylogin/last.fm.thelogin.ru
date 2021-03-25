@@ -6,6 +6,7 @@ import logging
 import re
 import requests
 from sqlalchemy.sql import func
+import urllib
 
 from last_fm.celery import cron
 from last_fm.db import db
@@ -69,7 +70,17 @@ def tweet_gets():
                         g = Get()
                         g.user = user
                         g.artist = scrobble.artist
-                        g.artist_image = get_network().get_artist(scrobble.artist).get_cover_image()
+                        image = BeautifulSoup(
+                            requests.get(
+                                "http://www.last.fm/music/%s" % urllib.quote_plus(scrobble.artist.encode('utf-8'))
+                            ).text
+                        ).\
+                        find(
+                            "div",
+                            class_="header-new-background-image",
+                        )
+                        if image is not None:
+                            g.artist_image = image.attrs["content"]
                         g.track = scrobble.track
                         g.datetime = scrobble.datetime
                         g.get = get
