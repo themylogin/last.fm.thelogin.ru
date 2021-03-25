@@ -15,6 +15,8 @@ RUN apt-get update && \
 
 RUN python -m virtualenv --python=python --system-site-packages /virtualenv
 
+RUN /virtualenv/bin/pip install setuptools==44.1.1 setuptools-scm==5.0.2
+
 ADD requirements.txt /requirements.txt
 RUN /virtualenv/bin/pip install -r /requirements.txt
 
