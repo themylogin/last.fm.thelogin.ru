@@ -37,11 +37,14 @@ def tweet_gets():
                     user_plays_count = int(re.sub("[^0-9]", "",
                                                   BeautifulSoup(
                                                       requests.get(
-                                                          "http://www.last.fm/ru/user/%s" % user.username
+                                                          "http://www.last.fm/user/%s" % user.username
                                                       ).text
                                                   ).\
-                                                  find("li", "header-metadata-item--scrobbles").\
-                                                  find("p", "header-metadata-display").\
+                                                  find(
+                                                      "a",
+                                                      href=re.compile("/user/.+/library"),
+                                                      string=re.compile("^[0-9, ]+$"),
+                                                  ).\
                                                   text))
                 except Exception:
                     logger.error("Synchronizing error", exc_info=True)
