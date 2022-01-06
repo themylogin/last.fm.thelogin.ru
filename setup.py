@@ -6,7 +6,7 @@ setup(
     install_requires=[
         "alembic",
         "beautifulsoup4",
-        "celery<4",
+        "celery<6",
         "feedparser",
         "Flask",
         "Flask-Bootstrap",
