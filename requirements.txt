@@ -40,7 +40,7 @@ MarkupSafe==0.23
 oauth2==1.9.0.post1
 oauthlib==1.1.2
 passlib==1.6.5
-Pillow==3.2.0
+Pillow==9.0.1
 psycopg2==2.6.1
 pylast==2.3.0
 PyRSS2Gen==1.1
