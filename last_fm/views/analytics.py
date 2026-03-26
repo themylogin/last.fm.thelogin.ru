@@ -1117,3 +1117,47 @@ def analytics_by_month():
     )
 
     return {"by_month": json.dumps(by_month), "by_day": json.dumps(by_day), "user": user}
+
+
+@app.route("/analytics/scrobble_race")
+@cached_analytics_view
+def analytics_scrobble_race():
+    user_ids = map(int, request.args.getlist("users"))
+
+    users = {user_id: db.session.query(User).get(user_id) for user_id in user_ids}
+
+    scrobbles = db.session.query(Scrobble.user_id, Scrobble.uts, Scrobble.artist, Scrobble.track).\
+        filter(Scrobble.user_id.in_(user_ids)).\
+        order_by(Scrobble.uts).\
+        all()
+
+    counts = {user_id: 0 for user_id in user_ids}
+    events = []
+    prev_leader = None
+
+    for user_id, uts, artist, track in scrobbles:
+        counts[user_id] += 1
+        other_id = [u for u in user_ids if u != user_id][0]
+
+        if counts[user_id] == counts[other_id] and prev_leader == other_id:
+            events.append({
+                "datetime": datetime.fromtimestamp(uts),
+                "text": "%s догнал %s по количеству скробблов (%s)" % (
+                    users[user_id].username, users[other_id].username,
+                    "{:,}".format(counts[user_id]).replace(",", " ")
+                ),
+                "scrobble_name": "%s — %s" % (artist, track),
+            })
+            prev_leader = None
+        elif counts[user_id] > counts[other_id] and prev_leader != user_id:
+            events.append({
+                "datetime": datetime.fromtimestamp(uts),
+                "text": "%s обогнал %s по количеству скробблов (%s)" % (
+                    users[user_id].username, users[other_id].username,
+                    "{:,}".format(counts[user_id]).replace(",", " ")
+                ),
+                "scrobble_name": "%s — %s" % (artist, track),
+            })
+            prev_leader = user_id
+
+    return dict(events=events)

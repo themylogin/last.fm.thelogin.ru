@@ -221,4 +221,8 @@
     {% call form("by_month", "Вылечился", "количество прослушиваний по месяцам разных лет", "Проверить, была ли уже депрессия") %}
         {{ select_user() }}
     {% endcall %}
+
+    {% call form("scrobble_race", "Гонка скробблов", "кто кого догнал и обогнал?", "Начать гонку") %}
+        {{ select_users(show_select_all=True) }}
+    {% endcall %}
 {% endblock %}
